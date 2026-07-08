@@ -6,10 +6,14 @@ from blueprint_analyzer import BlueprintAnalyzer
 app = Flask(__name__, static_folder='static', template_folder='templates')
 CORS(app)
 
-UPLOAD_FOLDER = 'uploads'
-FURNITURE_IMG_FOLDER = 'static/images'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(FURNITURE_IMG_FOLDER, exist_ok=True)
+if os.environ.get('VERCEL'):
+    UPLOAD_FOLDER = '/tmp'
+    FURNITURE_IMG_FOLDER = '/tmp'
+else:
+    UPLOAD_FOLDER = 'uploads'
+    FURNITURE_IMG_FOLDER = 'static/images'
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(FURNITURE_IMG_FOLDER, exist_ok=True)
 
 with open('data/furniture.json', 'r') as f:
     FURNITURE = json.load(f)
