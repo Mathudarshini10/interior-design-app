@@ -1,6 +1,6 @@
 // Upgraded Three.js 3D Graphics View Engine with PBR Materials & Custom Geometry
 
-let threeScene, threeCamera, threeRenderer, threeControls;
+let threeScene, threeCamera, threeRenderer, threeControls, threeTransformControls;
 let threeContainer;
 let isThreeInitialized = false;
 
@@ -41,6 +41,44 @@ function initThree() {
 
   // 6. Lighting setup
   setupLighting();
+
+  // 6.5. Transform Controls Setup
+  threeTransformControls = new THREE.TransformControls(threeCamera, threeRenderer.domElement);
+  threeTransformControls.size = 0.75;
+  threeScene.add(threeTransformControls);
+
+  threeTransformControls.addEventListener('dragging-changed', (event) => {
+    threeControls.enabled = !event.value;
+  });
+
+  threeTransformControls.addEventListener('change', () => {
+    const targetObj = threeTransformControls.object;
+    if (targetObj && targetObj.userData && targetObj.userData.itemIndex !== undefined) {
+      const idx = targetObj.userData.itemIndex;
+      const item = State.placedItems[idx];
+      if (item) {
+        const scale = State.blueprintData.metadata.scale_pixels_per_meter || 60.0;
+        const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
+        item.x = Math.round(canvasCoords.x - item.width / 2);
+        item.y = Math.round(canvasCoords.y - item.height / 2);
+        item.rotation = targetObj.rotation.y;
+        
+        redraw();
+        State.saveState();
+      }
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (!threeTransformControls) return;
+    if (e.key === 't' || e.key === 'T' || e.key === 'w' || e.key === 'W') {
+      threeTransformControls.setMode('translate');
+      Exporter.showNotification("✋ Move Mode active");
+    } else if (e.key === 'r' || e.key === 'R' || e.key === 'e' || e.key === 'E') {
+      threeTransformControls.setMode('rotate');
+      Exporter.showNotification("🔄 Rotate Mode active");
+    }
+  });
 
   // 7. Raycaster click-to-select furniture in 3D
   setup3DSelection();
@@ -260,6 +298,13 @@ function to3DCoords(x, y, scale) {
   return {
     x: (x - houseCenterX) / scale,
     z: (y - houseCenterY) / scale
+  };
+}
+
+function toCanvasCoords(x, z, scale) {
+  return {
+    x: x * scale + houseCenterX,
+    y: z * scale + houseCenterY
   };
 }
 
@@ -488,14 +533,17 @@ function build3DHouse() {
   }
 
   // 3. Render placed furniture catalog
-  State.placedItems.forEach(item => {
+  State.placedItems.forEach((item, idx) => {
     const pt = to3DCoords(item.x + item.width / 2, item.y + item.height / 2, scale);
     const itemWM = item.width / scale;
     const itemHM = item.height / scale;
     const itemRot = item.rotation || 0;
     const yOffsetM = (item.y_offset_cm || 0) / 100;
 
-    create3DFurniture(item.name, pt.x, pt.z, itemWM, itemHM, itemRot, yOffsetM, item.color, item.material);
+    const g = create3DFurniture(item.name, pt.x, pt.z, itemWM, itemHM, itemRot, yOffsetM, item.color, item.material);
+    if (g) {
+      g.userData.itemIndex = idx;
+    }
   });
 
   // Re-highlight the selected item in 3D if active
@@ -907,6 +955,7 @@ function create3DFurniture(name, x, z, w, d, rotation, yOffsetM = 0, customColor
   group.position.set(x, yOffsetM, z);
   group.rotation.y = rotation;
   threeScene.add(group);
+  return group;
 }
 
 function fit3DCamera() {
@@ -1026,6 +1075,11 @@ function setup3DSelection() {
         
         // Highlight in 3D
         highlight3DItem(selectedGroup);
+        
+        // Attach Transform Controls Gizmo!
+        selectedGroup.userData.itemIndex = bestItemIdx;
+        threeTransformControls.attach(selectedGroup);
+        
         Exporter.showNotification(`🎯 Selected: ${item.name}`);
       }
     } else {
@@ -1034,6 +1088,9 @@ function setup3DSelection() {
       if (selectionBoxHelper && threeScene) {
         threeScene.remove(selectionBoxHelper);
         selectionBoxHelper = null;
+      }
+      if (threeTransformControls) {
+        threeTransformControls.detach();
       }
       // Reset properties panel
       const propContent = document.getElementById('properties-panel-content');
