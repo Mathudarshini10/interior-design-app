@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Furniture Catalog</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <style>
+    .catalog-page { padding: 24px 32px; }
+    .catalog-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; }
+    .filter-btn { background:#f0f0f0; border:1px solid #ddd; border-radius:20px; padding:6px 16px; font-size:12px; cursor:pointer; }
+    .filter-btn.active { background:#1a1a2e; color:white; }
+    .catalog-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:20px; }
+    .catalog-card { background:white; border-radius:14px; border:1px solid #eee; overflow:hidden; cursor:pointer; transition:all 0.2s; }
+    .catalog-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,0.12); }
+    .card-image { width:100%; height:160px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:64px; position:relative; }
+    .card-image img { width:100%; height:100%; object-fit:cover; }
+    .card-body { padding:14px; }
+    .card-name { font-size:14px; font-weight:700; margin-bottom:4px; }
+    .card-dims { font-size:11px; color:#888; margin-bottom:6px; }
+    .card-price { font-size:15px; font-weight:700; color:#2e7d32; }
+    .card-badge { position:absolute; top:8px; right:8px; background:#1a1a2e; color:white; font-size:10px; padding:3px 8px; border-radius:10px; }
+
+    /* MODAL */
+    .modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:white; border-radius:16px; width:860px; max-width:95vw; max-height:90vh; overflow:auto; display:flex; }
+    .modal-viewer { width:400px; min-height:400px; background:#f5f5f5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; border-radius:16px 0 0 16px; }
+    .main-image { width:300px; height:280px; object-fit:contain; border-radius:10px; background:#eee; display:flex; align-items:center; justify-content:center; font-size:80px; }
+    .view-angles { display:flex; gap:8px; margin-top:12px; }
+    .angle-btn { background:#eee; border:none; border-radius:8px; padding:6px 10px; font-size:11px; cursor:pointer; }
+    .angle-btn.active { background:#1a1a2e; color:white; }
+    .modal-info { flex:1; padding:28px; }
+    .modal-name { font-size:22px; font-weight:700; margin-bottom:8px; }
+    .modal-price { font-size:24px; font-weight:700; color:#2e7d32; margin-bottom:16px; }
+    .dim-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
+    .dim-box { background:#f5f5f5; border-radius:8px; padding:10px; text-align:center; }
+    .dim-label { font-size:10px; color:#888; }
+    .dim-value { font-size:16px; font-weight:700; margin-top:2px; }
+    .modal-desc { font-size:13px; color:#666; margin-bottom:20px; line-height:1.6; }
+    .close-btn { position:absolute; top:16px; right:20px; background:none; border:none; font-size:24px; cursor:pointer; color:#666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🏠 DesignStudio</h1>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/design">Design Room</a>
+      <a href="/dashboard">Dashboard</a>
+    </nav>
+  </header>
+
+  <div class="catalog-page">
+    <div class="catalog-header">
+      <div>
+        <h2 style="font-size:22px">🛒 Furniture Catalog</h2>
+        <p style="font-size:13px;color:#888;margin-top:4px">Click any item to view in detail, rotate, and see dimensions</p>
+      </div>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:20px">
+      <button class="filter-btn active" onclick="filterCat('',this)">All</button>
+      <button class="filter-btn" onclick="filterCat('seating',this)">🛋️ Seating</button>
+      <button class="filter-btn" onclick="filterCat('table',this)">🍽️ Tables</button>
+      <button class="filter-btn" onclick="filterCat('bedroom',this)">🛏️ Bedroom</button>
+      <button class="filter-btn" onclick="filterCat('storage',this)">📦 Storage</button>
+      <button class="filter-btn" onclick="filterCat('lighting',this)">💡 Lighting</button>
+    </div>
+
+    <div class="catalog-grid" id="catalog-grid"></div>
+  </div>
+
+  <!-- DETAIL MODAL -->
+  <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+    <div class="modal" style="position:relative">
+      <button class="close-btn" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
+
+      <div class="modal-viewer">
+        <div class="main-image" id="modal-img-display">🛋️</div>
+        <div class="view-angles">
+          <button class="angle-btn active" onclick="setAngle('front',this)">Front</button>
+          <button class="angle-btn" onclick="setAngle('side',this)">Side</button>
+          <button class="angle-btn" onclick="setAngle('top',this)">Top</button>
+          <button class="angle-btn" onclick="setAngle('back',this)">Back</button>
+        </div>
+        <p style="font-size:11px;color:#aaa;margin-top:8px">Click angle to rotate view</p>
+      </div>
+
+      <div class="modal-info">
+        <div class="modal-name" id="modal-name">Modern Sofa</div>
+        <div class="modal-price" id="modal-price">₹25,000</div>
+
+        <div class="dim-grid">
+          <div class="dim-box">
+            <div class="dim-label">LENGTH</div>
+            <div class="dim-value" id="modal-length">220 cm</div>
+          </div>
+          <div class="dim-box">
+            <div class="dim-label">BREADTH</div>
+            <div class="dim-value" id="modal-breadth">90 cm</div>
+          </div>
+          <div class="dim-box">
+            <div class="dim-label">HEIGHT</div>
+            <div class="dim-value" id="modal-height">85 cm</div>
+          </div>
+        </div>
+
+        <div style="background:#e8f5e9;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+          📐 Floor area covered: <strong id="modal-sqft">17.9 sq ft</strong>
+        </div>
+
+        <div class="modal-desc" id="modal-desc">Premium 3-seater sofa</div>
+
+        <div style="display:flex;gap:10px">
+          <button class="btn" onclick="addToDesign()" style="flex:1">
+            ➕ Add to Design
+          </button>
+          <button class="btn" onclick="window.location='/design'" style="background:#444;flex:1">
+            🎨 Open Designer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const EMOJIS = {
+      'Modern Sofa':'🛋️','Oak Coffee Table':'🪑','Bookshelf':'📚',
+      'Dining Table':'🍽️','Armchair':'💺','Floor Lamp':'💡',
+      'Wardrobe':'🚪','King Bed':'🛏️'
+    };
+    const ANGLE_EMOJIS = { front:'🛋️', side:'◀️🛋️', top:'⬛', back:'🔄🛋️' };
+    let allItems = [];
+    let currentItem = null;
+
+    async function loadCatalog(category='') {
+      const url = category ? `/api/furniture?category=${category}` : '/api/furniture';
+      const res = await fetch(url);
+      allItems = await res.json();
+      renderGrid(allItems);
+    }
+
+    function filterCat(cat, btn) {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadCatalog(cat);
+    }
+
+    function renderGrid(items) {
+      document.getElementById('catalog-grid').innerHTML = items.map(item => `
+        <div class="catalog-card" onclick="openModal(${item.id})">
+          <div class="card-image">
+            <span style="font-size:64px">${EMOJIS[item.name]||'🪑'}</span>
+            <span class="card-badge">${item.style}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-name">${item.name}</div>
+            <div class="card-dims">📐 ${item.length_cm}×${item.breadth_cm} cm · ${item.sqft} sq ft</div>
+            <div class="card-price">₹${item.price.toLocaleString()}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openModal(id) {
+      currentItem = allItems.find(i => i.id === id);
+      if (!currentItem) return;
+      document.getElementById('modal-name').textContent = currentItem.name;
+      document.getElementById('modal-price').textContent = '₹' + currentItem.price.toLocaleString();
+      document.getElementById('modal-length').textContent = currentItem.length_cm + ' cm';
+      document.getElementById('modal-breadth').textContent = currentItem.breadth_cm + ' cm';
+      document.getElementById('modal-height').textContent = currentItem.height_cm + ' cm';
+      document.getElementById('modal-sqft').textContent = currentItem.sqft + ' sq ft';
+      document.getElementById('modal-desc').textContent = currentItem.description;
+      document.getElementById('modal-img-display').textContent = EMOJIS[currentItem.name] || '🪑';
+      document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector('.angle-btn').classList.add('active');
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function setAngle(angle, btn) {
+      document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const el = document.getElementById('modal-img-display');
+      const angles = { front:'🛋️', side:'◀️', top:'⬜', back:'🔁' };
+      el.textContent = (EMOJIS[currentItem?.name]||'🪑') + ' ' + (angles[angle]||'');
+    }
+
+    function closeModal(e) {
+      if (e.target.id === 'modal') document.getElementById('modal').classList.remove('open');
+    }
+
+    function addToDesign() {
+      localStorage.setItem('addItem', JSON.stringify(currentItem));
+      window.location = '/design';
+    }
+
+    loadCatalog();
+  </script>
+</body>
+</html>
+

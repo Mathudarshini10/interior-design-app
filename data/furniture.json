@@ -1,0 +1,83 @@
+[
+  {
+    "id": 1, "name": "Modern Sofa", "price": 25000,
+    "style": "modern", "category": "seating",
+    "color": "#6c8ebf",
+    "length_cm": 220, "breadth_cm": 90, "height_cm": 85,
+    "sqft": 17.9,
+    "image": "/static/images/sofa1.jpg",
+    "description": "3-seater modern sofa, premium fabric",
+    "canvas_w": 132, "canvas_h": 54
+  },
+  {
+    "id": 2, "name": "Oak Coffee Table", "price": 8500,
+    "style": "modern", "category": "table",
+    "color": "#d6a85a",
+    "length_cm": 120, "breadth_cm": 60, "height_cm": 45,
+    "sqft": 6.5,
+    "image": "/static/images/table1.jpg",
+    "description": "Solid oak, minimalist design",
+    "canvas_w": 72, "canvas_h": 36
+  },
+  {
+    "id": 3, "name": "Bookshelf", "price": 6500,
+    "style": "classic", "category": "storage",
+    "color": "#8b6343",
+    "length_cm": 80, "breadth_cm": 30, "height_cm": 180,
+    "sqft": 2.6,
+    "image": "/static/images/shelf1.jpg",
+    "description": "5-shelf wooden bookcase",
+    "canvas_w": 48, "canvas_h": 18
+  },
+  {
+    "id": 4, "name": "Dining Table", "price": 18000,
+    "style": "modern", "category": "table",
+    "color": "#d6a85a",
+    "length_cm": 180, "breadth_cm": 90, "height_cm": 76,
+    "sqft": 14.6,
+    "image": "/static/images/dining1.jpg",
+    "description": "6-seater dining table, teak wood",
+    "canvas_w": 108, "canvas_h": 54
+  },
+  {
+    "id": 5, "name": "Armchair", "price": 12000,
+    "style": "classic", "category": "seating",
+    "color": "#b07d62",
+    "length_cm": 85, "breadth_cm": 85, "height_cm": 95,
+    "sqft": 6.5,
+    "image": "/static/images/chair1.jpg",
+    "description": "Single seater, velvet finish",
+    "canvas_w": 51, "canvas_h": 51
+  },
+  {
+    "id": 6, "name": "Floor Lamp", "price": 3500,
+    "style": "modern", "category": "lighting",
+    "color": "#f0c040",
+    "length_cm": 35, "breadth_cm": 35, "height_cm": 165,
+    "sqft": 1.1,
+    "image": "/static/images/lamp1.jpg",
+    "description": "Arc floor lamp, matte black",
+    "canvas_w": 21, "canvas_h": 21
+  },
+  {
+    "id": 7, "name": "Wardrobe", "price": 22000,
+    "style": "classic", "category": "storage",
+    "color": "#7a5c3e",
+    "length_cm": 180, "breadth_cm": 60, "height_cm": 210,
+    "sqft": 9.7,
+    "image": "/static/images/wardrobe1.jpg",
+    "description": "3-door sliding wardrobe",
+    "canvas_w": 108, "canvas_h": 36
+  },
+  {
+    "id": 8, "name": "King Bed", "price": 35000,
+    "style": "modern", "category": "bedroom",
+    "color": "#9b8ea0",
+    "length_cm": 200, "breadth_cm": 180, "height_cm": 50,
+    "sqft": 32.3,
+    "image": "/static/images/bed1.jpg",
+    "description": "King size bed with storage",
+    "canvas_w": 120, "canvas_h": 108
+  }
+]
+

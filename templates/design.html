@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HomeForge AI — Premium Interior Design Platform</title>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+  <!-- Three.js and OrbitControls for 3D generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body class="theme-light">
+
+  <!-- TOP NAVIGATION BAR -->
+  <header class="top-nav">
+    <div class="logo-area">
+      <span class="logo-icon">🏠</span>
+      <h1 class="logo-text">HomeForge <span class="badge">AI PRO</span></h1>
+    </div>
+
+    <!-- Export & Project Actions -->
+    <div class="nav-actions">
+      <!-- Auto Save Indicator -->
+      <span id="save-indicator">⚡ Saved</span>
+
+      <button class="nav-btn" onclick="Exporter.saveProjectFile()" title="Save Project to JSON">💾 Save</button>
+      <button class="nav-btn" onclick="document.getElementById('load-project-picker').click()" title="Load Project from JSON">📁 Load</button>
+      <input type="file" id="load-project-picker" style="display:none" onchange="Exporter.loadProjectFile(this.files[0])" accept=".json"/>
+      
+      <span class="nav-divider">|</span>
+      
+      <button class="nav-btn" onclick="Exporter.exportPNG()" title="Export PNG Snapshot">📷 Capture</button>
+      <button class="nav-btn" onclick="Exporter.exportGLB()" title="Export 3D GLB Model">📦 Export GLB</button>
+      <button class="nav-btn" onclick="Exporter.exportOBJ()" title="Export OBJ Model">📥 OBJ</button>
+
+      <span class="nav-divider">|</span>
+
+      <button class="nav-btn ar-btn" onclick="WebXRManager.startAR()" title="Launch Augmented Reality">📲 AR Mode</button>
+      <button class="nav-btn vr-btn" onclick="WebXRManager.startVR()" title="Walkthrough in Virtual Reality">🕶️ VR Walk</button>
+      
+      <span class="nav-divider">|</span>
+      <button class="theme-toggle-btn" onclick="UI.toggleTheme()" title="Toggle Dark/Light Mode">🌓 Mode</button>
+    </div>
+  </header>
+
+  <!-- STEP-BY-STEP WORKFLOW INDICATOR BAR -->
+  <div class="step-indicator-bar glass">
+    <div class="step-item active" id="step-tab-1" onclick="UI.changeStep(1)">
+      <span class="step-number">1</span> Upload Blueprint
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-tab-2" onclick="UI.changeStep(2)">
+      <span class="step-number">2</span> 2D Floor Plan Editor
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-tab-3" onclick="UI.changeStep(3)">
+      <span class="step-number">3</span> 3D House View
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item" id="step-tab-4" onclick="UI.changeStep(4)">
+      <span class="step-number">4</span> 3D Interior Design
+    </div>
+  </div>
+
+  <div class="design-page">
+
+    <!-- ROOM SELECTOR BAR (STEP 4) -->
+    <div class="room-bar glass" id="step-4-room-bar" style="display: none;">
+      <span class="section-tag">ROOM CATEGORIES:</span>
+      <button class="room-btn active" id="room-living" onclick="UI.selectRoom('Living Room')">🛋️ Living Room</button>
+      <button class="room-btn" id="room-bed" onclick="UI.selectRoom('Bedroom')">🛏️ Bedroom</button>
+      <button class="room-btn" id="room-kitchen" onclick="UI.selectRoom('Kitchen')">🍳 Kitchen</button>
+      <button class="room-btn" id="room-bath" onclick="UI.selectRoom('Bathroom')">🚿 Bathroom</button>
+      <button class="room-btn" id="room-office" onclick="UI.selectRoom('Office')">💼 Office</button>
+      <button class="room-btn" id="room-outdoor" onclick="UI.selectRoom('Outdoor')">🌳 Outdoor</button>
+      
+      <span style="margin-left: auto; font-weight: 700; color: var(--text-secondary);">VIEW TRANSITION:</span>
+      <button class="room-btn" id="btn-toggle-2d" onclick="setViewMode('2d')">✏️ 2D Canvas</button>
+      <button class="room-btn active" id="btn-toggle-3d" onclick="setViewMode('3d')">🕶️ 3D Orbit</button>
+    </div>
+
+    <div class="design-body">
+
+      <!-- LEFT: Furniture Store, PBR Materials, and Properties Panels -->
+      <div class="left-panel glass" id="left-panel">
+        
+        <!-- Accordion Item: Selected Properties (Step 2 & Step 4) -->
+        <div class="accordion-item active" id="properties-accordion" style="display: none;">
+          <div class="accordion-header" onclick="UI.toggleAccordion(this)">
+            <span>⚙️ Selected Properties</span>
+            <span class="chevron">▼</span>
+          </div>
+          <div class="accordion-content" id="properties-panel-content">
+            <p style="font-size:11px; color:var(--text-secondary);">Select a wall, room, door, window, or furniture piece on the canvas to configure properties.</p>
+          </div>
+        </div>
+
+        <!-- Collapsible Catalog Section (Step 4 only) -->
+        <div class="accordion-item" id="catalog-accordion" style="display: none;">
+          <div class="accordion-header" onclick="UI.toggleAccordion(this)">
+            <span>🛒 Furniture Catalog</span>
+            <span class="chevron">▶</span>
+          </div>
+          <div class="accordion-content">
+            <div class="catalog-filters">
+              <input type="text" id="catalog-search" placeholder="🔍 Search furniture..." oninput="UI.filterCatalog()"/>
+              <select id="style-select-filter" onchange="UI.filterCatalog()">
+                <option value="All">All Styles</option>
+                <option value="modern">Modern</option>
+                <option value="minimalist">Minimalist</option>
+                <option value="luxury">Luxury</option>
+                <option value="scandinavian">Scandinavian</option>
+                <option value="industrial">Industrial</option>
+              </select>
+            </div>
+            <div class="furniture-list" id="furniture-list"></div>
+          </div>
+        </div>
+
+        <!-- Collapsible Materials Section (Step 4 only) -->
+        <div class="accordion-item" id="materials-accordion" style="display: none;">
+          <div class="accordion-header" onclick="UI.toggleAccordion(this)">
+            <span>🎨 Room Finishes & Materials</span>
+            <span class="chevron">▶</span>
+          </div>
+          <div class="accordion-content">
+            <div class="materials-group">
+              <label>Select Surface</label>
+              <select id="material-target">
+                <option value="floor">Room Floor</option>
+                <option value="ceiling">Room Ceiling</option>
+              </select>
+
+              <label>Select PBR Material</label>
+              <div class="material-grid">
+                <div class="material-card" onclick="UI.applyMaterial('wood')" title="Oak Wood Planks">
+                  <div class="mat-preview wood-bg"></div>
+                  <span>Wood</span>
+                </div>
+                <div class="material-card" onclick="UI.applyMaterial('marble')" title="Polished Carrara Marble">
+                  <div class="mat-preview marble-bg"></div>
+                  <span>Marble</span>
+                </div>
+                <div class="material-card" onclick="UI.applyMaterial('concrete')" title="Raw Brutalist Concrete">
+                  <div class="mat-preview concrete-bg"></div>
+                  <span>Concrete</span>
+                </div>
+                <div class="material-card" onclick="UI.applyMaterial('brick')" title="Red Brick Masonry">
+                  <div class="mat-preview brick-bg"></div>
+                  <span>Brick</span>
+                </div>
+                <div class="material-card" onclick="UI.applyMaterial('tiles')" title="Cyan Glaze Tiles">
+                  <div class="mat-preview tiles-bg"></div>
+                  <span>Tiles</span>
+                </div>
+              </div>
+
+              <label style="margin-top:12px">Wall Paint Color</label>
+              <div class="color-picker-palette">
+                <div class="color-swatch" style="background:#ffffff" onclick="UI.applyWallColor('#ffffff')"></div>
+                <div class="color-swatch" style="background:#faf8f5" onclick="UI.applyWallColor('#faf8f5')"></div>
+                <div class="color-swatch" style="background:#e0e0e0" onclick="UI.applyWallColor('#e0e0e0')"></div>
+                <div class="color-swatch" style="background:#1e1e2f" onclick="UI.applyWallColor('#1e1e2f')"></div>
+                <div class="color-swatch" style="background:#b0bec5" onclick="UI.applyWallColor('#b0bec5')"></div>
+                <input type="color" id="custom-wall-color" onchange="UI.applyWallColor(this.value)" title="Custom Color Picker"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MIDDLE: Canvas/Viewport Area -->
+      <div class="canvas-area">
+        
+        <!-- STEP 1: UPLOAD SCREEN -->
+        <div id="step-1-upload-screen" class="step-view" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; width: 100%; height: 100%; padding: 40px; text-align: center;">
+          <div class="upload-graphic" style="font-size: 60px;">📐</div>
+          <h2>Upload Floor Plan Blueprint</h2>
+          <p style="color: var(--text-secondary); max-width: 400px; font-size: 13px;">Upload any 2D blueprint, sketch, or plan image. The HomeForge AI will construct an editable starting floor plan automatically.</p>
+          <label class="upload-btn" for="blueprint-upload-file" style="padding: 12px 30px; font-size: 13px; border-radius: 30px;">
+            📁 Select Image File
+          </label>
+          <input type="file" id="blueprint-upload-file" accept="image/*" onchange="UI.handleBlueprintUpload(this.files[0])" style="display: none;"/>
+          <div style="margin-top: 10px; font-size: 11px; color: var(--text-secondary);">Supported formats: PNG, JPG, JPEG, BMP</div>
+        </div>
+
+        <!-- 2D Canvas Toolbar (Step 2 & 4) -->
+        <div class="canvas-toolbar glass" id="canvas-toolbar" style="display: none;">
+          <span>🏠 <strong id="current-room-label">Living Room</strong></span>
+          <span class="bar-divider">·</span>
+          <span id="item-count">0 items</span>
+          <span class="bar-divider">·</span>
+          <span id="coordinates-display">X: 0.00, Y: 0.00</span>
+          
+          <span style="margin-left:auto">
+            <input type="checkbox" id="grid-snap-toggle" onchange="UI.toggleGridSnap()"/>
+            <label for="grid-snap-toggle" style="font-size:11px; cursor:pointer;">Grid Snapping (10cm)</label>
+          </span>
+        </div>
+
+        <!-- Calibration Warning Banner -->
+        <div id="calibration-banner" style="display: none;">
+          <span>📐 Scale Calibration: Click two coordinate points on the canvas to set a known distance.</span>
+          <button onclick="cancelCalibration()">Cancel</button>
+        </div>
+
+        <!-- Floating Vertical Editing Tools Toolbar (Step 2) -->
+        <div class="editing-controls glass" id="blueprint-tools" style="display: none;">
+          <button class="tool-btn active" id="tool-select" onclick="UI.setToolMode('select')" title="Select / Move Walls (V)">🖱️</button>
+          <button class="tool-btn" id="tool-wall" onclick="UI.setToolMode('draw_wall')" title="Draw Wall Segment (W)">✏️</button>
+          <button class="tool-btn" id="tool-door" onclick="UI.setToolMode('add_door')" title="Place Snapped Door (D)">🚪</button>
+          <button class="tool-btn" id="tool-window" onclick="UI.setToolMode('add_window')" title="Place Snapped Window (I)">🪟</button>
+        </div>
+
+        <!-- Floating Glassmorphic View Controller Overlay (Step 2 & 4) -->
+        <div class="viewer-controls glass" id="viewer-controls" style="display: none;">
+          <button class="control-btn" onclick="zoomCanvas(1.2)" title="Zoom In">➕</button>
+          <button class="control-btn" onclick="zoomCanvas(0.8)" title="Zoom Out">➖</button>
+          <button class="control-btn" onclick="fitToScreen()" title="Fit Layout to Screen">📺</button>
+          <button class="control-btn" onclick="resetView()" title="Reset Camera View">🔄</button>
+          <button class="control-btn" id="grid-toggle-btn" onclick="toggleGrid()" title="Toggle Grid Visibility">🌐</button>
+          <span class="control-divider">|</span>
+          <button class="control-btn" onclick="startCalibration()" title="Calibrate Ruler Scale">📐</button>
+          <button class="control-btn" onclick="UI.triggerUndo()" title="Undo Action">↩️</button>
+          <button class="control-btn" onclick="UI.triggerRedo()" title="Redo Action">↪️</button>
+        </div>
+
+        <!-- The viewports -->
+        <canvas id="room-canvas" width="640" height="500" style="display: none;"></canvas>
+        <div id="three-container" style="display: none; width: 640px; height: 500px; border-radius: 8px;"></div>
+        
+        <div class="canvas-hint" id="canvas-hint" style="display: none;">Drag items onto screen. Space+Drag to Pan. Ctrl+D to duplicate.</div>
+      </div>
+
+      <!-- RIGHT: AI Designer, Actions & Valuation estimate -->
+      <div class="right-panel glass" id="right-panel" style="display: none;">
+        
+        <!-- STEP 2 LAYOUT ACTIONS PANEL -->
+        <div class="panel-header" id="step-2-actions-header">⚙️ Design Actions</div>
+        <div class="ai-controls-card glass-dark" id="step-2-actions-panel">
+          <label>Add Rectangular Room</label>
+          <button class="nav-btn" onclick="UI.addRoomBox()" style="width:100%; border-color:var(--accent); color:var(--accent); font-weight:700; padding:8px; margin-bottom:12px;">➕ Add Default 4-Wall Room</button>
+          
+           <label>Recalculate Contours</label>
+          <button class="nav-btn" onclick="if(window.recalculateRoomDimensions) { recalculateRoomDimensions(); redraw(); Exporter.showNotification('✅ Rooms recalculated!'); }" style="width:100%; padding:8px; margin-bottom:12px;">🔄 Detect Rooms from Walls</button>
+          
+          <label>Reset Structural Layout</label>
+          <button class="prop-btn-danger" onclick="UI.clearStructuralLayout()" style="width:100%; padding:8px; margin-top:2px;">🗑️ Clear All Walls & Openings</button>
+          
+          <!-- GENERATE 3D HOUSE BUTTON (Step 2) -->
+          <button class="ai-action-btn" id="generate-3d-btn" onclick="UI.changeStep(3)" style="background: linear-gradient(135deg, #2e7d32, #4caf50); box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3); width: 100%; margin-top: 15px; font-size:13px; font-weight:800; padding:12px;">🏠 Generate 3D House</button>
+        </div>
+
+        <!-- STEP 4 AUTOLAYOUT ASSISTANT PANEL -->
+        <div class="panel-header" id="step-4-ai-header" style="display: none;">🤖 AI Designer Assistant</div>
+        <div class="ai-controls-card glass-dark" id="step-4-ai-panel" style="display: none;">
+          <label>Select Room Contour</label>
+          <select id="ai-room-select">
+            <option value="none">-- Choose Room --</option>
+          </select>
+
+          <label>Style Theme</label>
+          <select id="ai-style-select">
+            <option value="modern">Modern Minimalist</option>
+            <option value="minimalist">Zen Minimalist</option>
+            <option value="luxury">Dark Luxury Classic</option>
+            <option value="scandinavian">Scandinavian Organic</option>
+            <option value="industrial">Urban Industrial Brick</option>
+          </select>
+
+          <button class="ai-action-btn" onclick="UI.triggerAIDesigner()">🤖 Autocomplete Design Layout</button>
+        </div>
+
+        <!-- Architectural Options (Step 4 only) -->
+        <div class="panel-header" id="step-4-architecture-header" style="display: none; margin-top: 20px;">🏗️ Building Structure</div>
+        <div class="ai-controls-card glass-dark" id="step-4-architecture-panel" style="display: none;">
+          <label>Roof Construction Style</label>
+          <select id="architecture-roof" onchange="UI.updateRoofStyle(this.value)">
+            <option value="none">No Roof (Open View)</option>
+            <option value="flat">Flat Roof Slab</option>
+            <option value="gable">Pitched Gable Roof</option>
+          </select>
+          
+          <label style="margin-top:8px;">Crown Molding Trim</label>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:11px;">Enable Wall Crown Moldings</span>
+            <input type="checkbox" id="architecture-molding" onchange="UI.updateMolding(this.checked)"/>
+          </div>
+        </div>
+
+        <!-- Dynamic Valuation Card (Step 4 only) -->
+        <div class="panel-header" id="step-4-valuation-header" style="display: none; margin-top: 20px;">💰 Valuation Estimate</div>
+        <div class="cost-section glass-dark" id="step-4-valuation-panel" style="display: none;">
+          <div class="total-box">
+            <div class="total-label">FURNITURE VALUATION ESTIMATE</div>
+            <div class="amount" id="total-price">₹0</div>
+          </div>
+          <div class="cost-row">
+            <span>Items Placed:</span>
+            <strong id="item-count-2">0 items</strong>
+          </div>
+          <button class="quote-btn" onclick="generateQuote()">📄 Generate Invoice Quote</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Script Loader Orchestration in correct order -->
+  <script src="/static/js/state.js"></script>
+  <script src="/static/js/furniture_catalog.js"></script>
+  <script src="/static/js/exporter.js"></script>
+  <script src="/static/js/ai_designer.js"></script>
+  <script src="/static/js/webxr_mode.js"></script>
+  <script src="/static/js/three_view.js"></script>
+  <script src="/static/js/design.js"></script>
+  <script src="/static/js/ui.js"></script>
+</body>
+</html>
