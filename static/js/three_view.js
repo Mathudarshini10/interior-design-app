@@ -330,7 +330,8 @@ function toCanvasCoords(x, z, scale) {
 
 // Build 3D house structure
 function build3DHouse() {
-  if (!isThreeInitialized) return;
+  try {
+    if (!isThreeInitialized) return;
 
   // Clear previous meshes
   const toRemove = [];
@@ -590,6 +591,19 @@ function build3DHouse() {
   if (!window.initialCameraFit) {
     fit3DCamera();
     window.initialCameraFit = true;
+  }
+  } catch (err) {
+    console.error("3D house building failed:", err);
+    const container = document.getElementById('three-container');
+    if (container) {
+      container.innerHTML = `
+        <div style="padding: 20px; color: #d32f2f; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; line-height: 1.5; margin: 15px; text-align: left; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h4 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #c62828;">⚠️ 3D Generation Error</h4>
+          <p style="margin: 0 0 10px 0;">An error occurred while extruding the 3D model structures:</p>
+          <pre style="margin: 0; background: rgba(0,0,0,0.06); padding: 12px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; font-family: monospace; font-size: 12px; border: 1px solid rgba(0,0,0,0.1);">${err.stack || err.message || err}</pre>
+        </div>
+      `;
+    }
   }
 }
 
