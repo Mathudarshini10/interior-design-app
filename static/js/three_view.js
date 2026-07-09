@@ -14,7 +14,13 @@ function initThree() {
 
     // 1. Scene setup
     threeScene = new THREE.Scene();
-    threeScene.background = new THREE.Color('#f5f5f7');
+    threeScene.background = new THREE.Color('#121214');
+
+    // Add ground grid helper for scale reference and visibility
+    const gridHelper = new THREE.GridHelper(80, 80, '#555555', '#333333');
+    gridHelper.position.y = -0.01;
+    gridHelper.name = 'ground_grid';
+    threeScene.add(gridHelper);
 
     // 2. Camera setup
     threeCamera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
@@ -601,6 +607,9 @@ function build3DHouse() {
     fit3DCamera();
     window.initialCameraFit = true;
   }
+  
+  // Show detailed compilation statistics toast
+  Exporter.showNotification(`🎉 3D house built: ${State.blueprintData.walls.length} walls, ${State.blueprintData.rooms.length} rooms, ${State.placedItems.length} items!`);
   } catch (err) {
     console.error("3D house building failed:", err);
     const container = document.getElementById('three-container');
