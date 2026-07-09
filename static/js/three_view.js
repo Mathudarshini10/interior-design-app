@@ -1027,12 +1027,20 @@ function fit3DCamera() {
   const center = new THREE.Vector3();
   box.getCenter(center);
 
+  // NaN guards for layout bounding center
+  if (isNaN(center.x) || !isFinite(center.x)) center.x = 0;
+  if (isNaN(center.y) || !isFinite(center.y)) center.y = 0;
+  if (isNaN(center.z) || !isFinite(center.z)) center.z = 0;
+
   const maxDim = Math.max(size.x, size.y, size.z);
   const fov = threeCamera.fov * (Math.PI / 180);
   let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
 
-  // Add zoom padding
+  // Add zoom padding and clamp minimum camera distance to prevent clipping inside meshes
   cameraZ *= 1.35;
+  if (isNaN(cameraZ) || !isFinite(cameraZ) || cameraZ < 4.5) {
+    cameraZ = 4.5;
+  }
   
   // Center camera and target
   threeCamera.position.set(center.x, cameraZ * 0.8, center.z + cameraZ * 0.8);
