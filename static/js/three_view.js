@@ -29,7 +29,7 @@ function initThree() {
     // 3. Renderer setup (with preserveDrawingBuffer: true for exporter snapshots)
     threeRenderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     threeRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
-    threeRenderer.shadowMap.enabled = true;
+    threeRenderer.shadowMap.enabled = false;
     threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
     threeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
     threeRenderer.toneMappingExposure = 1.0;
@@ -277,7 +277,8 @@ function createProceduralPBR(type) {
     map: colorTex,
     normalMap: normalTex,
     roughness: roughnessVal,
-    metalness: metalnessVal
+    metalness: metalnessVal,
+    side: THREE.DoubleSide
   });
 }
 
@@ -289,13 +290,13 @@ function initPBRMaterials() {
   PBRMaterials.tiles = createProceduralPBR('tiles');
 
   // Generic secondary materials
-  PBRMaterials.plaster = new THREE.MeshStandardMaterial({ color: '#f5f5f5', roughness: 0.8 });
-  PBRMaterials.ceiling = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95 });
+  PBRMaterials.plaster = new THREE.MeshStandardMaterial({ color: '#f5f5f5', roughness: 0.8, side: THREE.DoubleSide });
+  PBRMaterials.ceiling = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.95, side: THREE.DoubleSide });
   PBRMaterials.glass = new THREE.MeshPhysicalMaterial({ color: '#e0f7fa', transparent: true, opacity: 0.35, roughness: 0.05, transmission: 0.9, thickness: 0.5 });
-  PBRMaterials.frame = new THREE.MeshStandardMaterial({ color: '#2b2b2b', roughness: 0.45 });
-  PBRMaterials.doorLeaf = new THREE.MeshStandardMaterial({ color: '#5d4037', roughness: 0.7 });
-  PBRMaterials.skirting = new THREE.MeshStandardMaterial({ color: '#e0e0e0', roughness: 0.75 });
-  PBRMaterials.roof = new THREE.MeshStandardMaterial({ color: '#78909c', roughness: 0.6 });
+  PBRMaterials.frame = new THREE.MeshStandardMaterial({ color: '#2b2b2b', roughness: 0.45, side: THREE.DoubleSide });
+  PBRMaterials.doorLeaf = new THREE.MeshStandardMaterial({ color: '#5d4037', roughness: 0.7, side: THREE.DoubleSide });
+  PBRMaterials.skirting = new THREE.MeshStandardMaterial({ color: '#e0e0e0', roughness: 0.75, side: THREE.DoubleSide });
+  PBRMaterials.roof = new THREE.MeshStandardMaterial({ color: '#78909c', roughness: 0.6, side: THREE.DoubleSide });
 }
 
 function animateThree() {
