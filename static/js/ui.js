@@ -858,6 +858,32 @@ const UI = {
     }
   },
 
+  clearAllDoors() {
+    if (!State.blueprintData) return;
+    if (confirm("🚪 Are you sure you want to clear all doors from this floor plan?")) {
+      State.saveHistory();
+      State.blueprintData.doors = [];
+      window.selectedDoor = null;
+      
+      if (State.viewMode === '3d') build3DHouse();
+      else redraw();
+      Exporter.showNotification("🚪 Removed all doors.");
+    }
+  },
+
+  clearAllWindows() {
+    if (!State.blueprintData) return;
+    if (confirm("🪟 Are you sure you want to clear all windows from this floor plan?")) {
+      State.saveHistory();
+      State.blueprintData.windows = [];
+      window.selectedWindow = null;
+      
+      if (State.viewMode === '3d') build3DHouse();
+      else redraw();
+      Exporter.showNotification("🪟 Removed all windows.");
+    }
+  },
+
   // Bind key combinations
   setupKeyboardShortcuts() {
     window.addEventListener('keydown', e => {
