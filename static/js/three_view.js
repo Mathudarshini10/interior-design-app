@@ -58,7 +58,7 @@ function initThree() {
         const idx = targetObj.userData.itemIndex;
         const item = State.placedItems[idx];
         if (item) {
-          const scale = State.blueprintData.metadata.scale_pixels_per_meter || 60.0;
+          const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
           const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
           item.x = Math.round(canvasCoords.x - item.width / 2);
           item.y = Math.round(canvasCoords.y - item.height / 2);
@@ -335,7 +335,7 @@ function build3DHouse() {
 
   if (!State.blueprintData) return;
 
-  const scale = State.blueprintData.metadata.scale_pixels_per_meter || 60.0;
+  const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
   
   // Calculate bounding box center of all wall points to center the house in 3D
   if (State.blueprintData.walls.length > 0) {
@@ -354,7 +354,7 @@ function build3DHouse() {
     houseCenterY = canvas.height / 2;
   }
 
-  const wallHeightM = (State.blueprintData.metadata.wall_height_cm || 280) / 100;
+  const wallHeightM = (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.wall_height_cm || 280) / 100;
 
   // 1. Render Floors, Concrete Slabs, and Ceilings
   State.blueprintData.rooms.forEach((room, roomIdx) => {
@@ -435,7 +435,7 @@ function build3DHouse() {
     const p1 = to3DCoords(wall.x1, wall.y1, scale);
     const p2 = to3DCoords(wall.x2, wall.y2, scale);
     const wallThickM = (wall.thickness || 15) / 100;
-    const wallHeightM = (wall.height || State.blueprintData.metadata.wall_height_cm || 280) / 100;
+    const wallHeightM = (wall.height || (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.wall_height_cm) || 280) / 100;
 
     const openings = findOpeningsOnWall(wall, scale);
     
