@@ -66,7 +66,7 @@ function initThree() {
           const idx = targetObj.userData.itemIndex;
           const item = State.placedItems[idx];
           if (item) {
-            const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
+            const scale = (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.scale_pixels_per_meter) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
             const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
             item.x = Math.round(canvasCoords.x - item.width / 2);
             item.y = Math.round(canvasCoords.y - item.height / 2);
@@ -373,7 +373,7 @@ function build3DHouse() {
 
   if (!State.blueprintData) return;
 
-  const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
+  const scale = (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.scale_pixels_per_meter) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
   
   // Calculate bounding box center of all wall points to center the house in 3D
   let validWallsFound = false;
@@ -1137,7 +1137,7 @@ function setup3DSelection() {
     }
 
     if (selectedGroup) {
-      const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
+      const scale = (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.scale_pixels_per_meter) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
       let bestItemIdx = null;
       let bestDist = Infinity;
 
