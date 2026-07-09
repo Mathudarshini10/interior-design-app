@@ -333,6 +333,15 @@ function build3DHouse() {
   try {
     if (!isThreeInitialized) return;
 
+    // Force resize to match current visible container dimensions (prevent 0x0 canvas bug)
+    if (threeRenderer && threeCamera && threeContainer) {
+      const w = threeContainer.clientWidth || 640;
+      const h = threeContainer.clientHeight || 500;
+      threeRenderer.setSize(w, h);
+      threeCamera.aspect = w / h;
+      threeCamera.updateProjectionMatrix();
+    }
+
   // Clear previous meshes
   const toRemove = [];
   threeScene.traverse(child => {
