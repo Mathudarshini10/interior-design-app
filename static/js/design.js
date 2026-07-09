@@ -1128,7 +1128,7 @@ function setViewMode(mode) {
     if (controls2d) controls2d.style.display = 'none';
     if (threeCont) threeCont.style.display = 'block';
     
-    if (hint) hint.textContent = "🕶️ 3D View: Left-Click & Drag to Orbit, Right-Click to Pan, Scroll to Zoom.";
+    if (hint) hint.textContent = "👁️ 3D View: Drag to Orbit, Right-Click to Pan. Click furniture/wall to select. [T] Move, [R] Rotate.";
     
     if (!isThreeInitialized) {
       initThree();

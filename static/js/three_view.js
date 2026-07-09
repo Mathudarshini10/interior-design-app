@@ -709,6 +709,7 @@ function createWallSegment(x1, z1, x2, z2, thickness, wallHeight, hMin, hMax, wa
   mesh.rotation.y = -Math.atan2(dz, dx) + Math.PI / 2;
   mesh.castShadow = true;
   mesh.receiveShadow = true;
+  mesh.userData = { type: 'wall', id: wallId };
   threeScene.add(mesh);
 
   // A. Create skirting board trim along the base (if base is ground 0)
@@ -1054,8 +1055,8 @@ function setup3DSelection() {
   const mouse = new THREE.Vector2();
 
   window.addEventListener('click', e => {
-    // Only select in Step 4 (Interior Design phase)
-    if (State.currentStep !== 4) return;
+    // Only select in Step 3 (House View) and Step 4 (Interior Design phase)
+    if (State.currentStep !== 3 && State.currentStep !== 4) return;
     if (!threeRenderer || !threeCamera) return;
 
     // Ignore clicks if clicking on left panel, right panel, or toolbar
@@ -1079,6 +1080,7 @@ function setup3DSelection() {
     
     let selectedGroup = null;
     let clickedFloorObj = null;
+    let clickedWallObj = null;
 
     for (let i = 0; i < intersects.length; i++) {
       let obj = intersects[i].object;
@@ -1086,6 +1088,11 @@ function setup3DSelection() {
       // Check if it's a floor mesh
       if (obj.userData && obj.userData.type === 'floor') {
         if (!clickedFloorObj) clickedFloorObj = obj;
+      }
+
+      // Check if it's a wall mesh
+      if (obj.userData && obj.userData.type === 'wall') {
+        if (!clickedWallObj) clickedWallObj = obj;
       }
 
       // Traverse up to find the group name of placed furniture
@@ -1130,6 +1137,22 @@ function setup3DSelection() {
         
         Exporter.showNotification(`🎯 Selected: ${item.name}`);
       }
+    } else if (clickedWallObj) {
+      // Wall segment selected directly in 3D!
+      State.selectedItem = null;
+      State.selectedRoomIndex = null;
+      if (threeTransformControls) {
+        threeTransformControls.detach();
+      }
+
+      const wallId = clickedWallObj.userData.id;
+      const wallData = State.blueprintData.walls.find(w => w.id === wallId);
+      if (wallData) {
+        window.selectedWall = wallData; // Set globally for property bindings
+        UI.showPropertiesPanel('wall', wallData);
+        highlight3DItem(clickedWallObj);
+        Exporter.showNotification(`🎯 Selected Wall: #${wallId}`);
+      }
     } else if (clickedFloorObj) {
       // Room floor selected directly in 3D!
       State.selectedItem = null;
@@ -1161,6 +1184,26 @@ function setup3DSelection() {
       if (propContent) {
         propContent.innerHTML = `<p style="font-size:11px; color:var(--text-secondary);">Select a wall, room, door, window, or furniture piece on the canvas to configure properties.</p>`;
       }
+    }
+  });
+
+  // Key bindings to switch Transform Control modes (T: Move, R: Rotate)
+  window.addEventListener('keydown', event => {
+    if (!threeTransformControls) return;
+    if (document.activeElement && (
+      document.activeElement.tagName === 'INPUT' || 
+      document.activeElement.tagName === 'TEXTAREA' || 
+      document.activeElement.tagName === 'SELECT'
+    )) {
+      return;
+    }
+    if (event.key === 't' || event.key === 'T') {
+      threeTransformControls.setMode('translate');
+      Exporter.showNotification("🔧 Mode: Move (T)");
+    }
+    if (event.key === 'r' || event.key === 'R') {
+      threeTransformControls.setMode('rotate');
+      Exporter.showNotification("🔄 Mode: Rotate (R)");
     }
   });
 }

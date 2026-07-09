@@ -407,7 +407,7 @@ const UI = {
       blueprintTools.style.display = 'none';
       viewControls.style.display = 'none';
       canvasHint.style.display = 'block';
-      canvasHint.textContent = "🕶️ 3D House View: Click Step 4 to start decorating rooms and placing furniture!";
+      canvasHint.textContent = "👁️ 3D View: Drag to Orbit, Right-Click to Pan. Click furniture/wall to select. [T] Move, [R] Rotate.";
       leftPanel.style.display = 'none';
       rightPanel.style.display = 'block';
       step4RoomBar.style.display = 'none';
@@ -433,7 +433,7 @@ const UI = {
       blueprintTools.style.display = 'none';
       viewControls.style.display = 'none';
       canvasHint.style.display = 'block';
-      canvasHint.textContent = "🛋️ 3D Interior Designer: Select furniture catalog items, drag/drop, customize paint & materials.";
+      canvasHint.textContent = "🛋️ 3D Interior Designer: Click furniture/wall to select. [T] Move, [R] Rotate. Customize paint & materials.";
       leftPanel.style.display = 'block';
       rightPanel.style.display = 'block';
       
@@ -783,6 +783,37 @@ const UI = {
     if (prop === 'length_cm') item.width = Math.round(val * (blueprintData?.metadata?.scale_pixels_per_meter || 60.0) / 100);
     if (prop === 'breadth_cm') item.height = Math.round(val * (blueprintData?.metadata?.scale_pixels_per_meter || 60.0) / 100);
     
+  },
+
+  triggerDeleteSelection() {
+    const deletedType = State.deleteSelection();
+    if (deletedType) {
+      const typeNames = {
+        item: "Catalog Item",
+        wall: "Wall Segment",
+        door: "Door Opening",
+        window: "Window Opening"
+      };
+      Exporter.showNotification(`🗑️ ${typeNames[deletedType]} deleted`);
+      
+      // Detach transform controls if active
+      if (typeof threeTransformControls !== 'undefined' && threeTransformControls) {
+        threeTransformControls.detach();
+      }
+
+      // Rebuild 3D if in 3D mode, otherwise redraw 2D
+      if (State.viewMode === '3d') {
+        build3DHouse();
+      } else {
+        redraw();
+      }
+      
+      // Clear properties panel
+      const propContent = document.getElementById('properties-panel-content');
+      if (propContent) {
+        propContent.innerHTML = `<p style="font-size:11px; color:var(--text-secondary);">Select a wall, room, door, window, or furniture piece on the canvas to configure properties.</p>`;
+      }
+    }
   },
 
   rotateSelectedItem(deg) {
