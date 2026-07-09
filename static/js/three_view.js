@@ -302,17 +302,23 @@ function animateThree() {
   if (!isThreeInitialized) return;
   requestAnimationFrame(animateThree);
   
-  if (State.viewMode === '3d') {
-    if (threeControls && threeControls.enabled) {
-      threeControls.update();
-    }
+  try {
+    if (State.viewMode === '3d') {
+      if (threeControls && threeControls.enabled) {
+        threeControls.update();
+      }
 
-    // Smooth door swings in walkthrough walk mode
-    if (typeof WebXRManager !== 'undefined' && WebXRManager.isWalkModeActive) {
-      WebXRManager.checkInteractiveObjects(threeCamera.position);
+      // Smooth door swings in walkthrough walk mode
+      if (typeof WebXRManager !== 'undefined' && WebXRManager.isWalkModeActive && threeCamera) {
+        WebXRManager.checkInteractiveObjects(threeCamera.position);
+      }
+      
+      if (threeRenderer && threeScene && threeCamera) {
+        threeRenderer.render(threeScene, threeCamera);
+      }
     }
-    
-    threeRenderer.render(threeScene, threeCamera);
+  } catch (err) {
+    console.error("3D Render loop error:", err);
   }
 }
 
