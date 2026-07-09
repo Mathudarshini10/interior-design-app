@@ -8,87 +8,103 @@ let isThreeInitialized = false;
 let PBRMaterials = {};
 
 function initThree() {
-  threeContainer = document.getElementById('three-container');
-  if (!threeContainer) return;
+  try {
+    threeContainer = document.getElementById('three-container');
+    if (!threeContainer) return;
 
-  // 1. Scene setup
-  threeScene = new THREE.Scene();
-  threeScene.background = new THREE.Color('#f5f5f7');
+    // 1. Scene setup
+    threeScene = new THREE.Scene();
+    threeScene.background = new THREE.Color('#f5f5f7');
 
-  // 2. Camera setup
-  threeCamera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
-  threeCamera.position.set(0, 12, 12);
+    // 2. Camera setup
+    threeCamera = new THREE.PerspectiveCamera(45, threeContainer.clientWidth / threeContainer.clientHeight, 0.1, 1000);
+    threeCamera.position.set(0, 12, 12);
 
-  // 3. Renderer setup (with preserveDrawingBuffer: true for exporter snapshots)
-  threeRenderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-  threeRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
-  threeRenderer.shadowMap.enabled = true;
-  threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  threeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  threeRenderer.toneMappingExposure = 1.0;
-  threeContainer.appendChild(threeRenderer.domElement);
+    // 3. Renderer setup (with preserveDrawingBuffer: true for exporter snapshots)
+    threeRenderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    threeRenderer.setSize(threeContainer.clientWidth, threeContainer.clientHeight);
+    threeRenderer.shadowMap.enabled = true;
+    threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    threeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    threeRenderer.toneMappingExposure = 1.0;
+    threeContainer.innerHTML = ''; // Clear container first
+    threeContainer.appendChild(threeRenderer.domElement);
 
-  // 4. Controls setup
-  threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
-  threeControls.enableDamping = true;
-  threeControls.dampingFactor = 0.05;
-  threeControls.maxPolarAngle = Math.PI / 2 - 0.02; // Prevent going below floor
-  threeControls.minDistance = 1;
-  threeControls.maxDistance = 60;
+    // 4. Controls setup
+    threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+    threeControls.enableDamping = true;
+    threeControls.dampingFactor = 0.05;
+    threeControls.maxPolarAngle = Math.PI / 2 - 0.02; // Prevent going below floor
+    threeControls.minDistance = 1;
+    threeControls.maxDistance = 60;
 
-  // 5. Initialize PBR Materials
-  initPBRMaterials();
+    // 5. Initialize PBR Materials
+    initPBRMaterials();
 
-  // 6. Lighting setup
-  setupLighting();
+    // 6. Lighting setup
+    setupLighting();
 
-  // 6.5. Transform Controls Setup
-  if (typeof THREE.TransformControls !== 'undefined') {
-    threeTransformControls = new THREE.TransformControls(threeCamera, threeRenderer.domElement);
-    threeTransformControls.size = 0.75;
-    threeScene.add(threeTransformControls);
+    // 6.5. Transform Controls Setup
+    if (typeof THREE.TransformControls !== 'undefined') {
+      threeTransformControls = new THREE.TransformControls(threeCamera, threeRenderer.domElement);
+      threeTransformControls.size = 0.75;
+      threeScene.add(threeTransformControls);
 
-    threeTransformControls.addEventListener('dragging-changed', (event) => {
-      threeControls.enabled = !event.value;
-    });
+      threeTransformControls.addEventListener('dragging-changed', (event) => {
+        threeControls.enabled = !event.value;
+      });
 
-    threeTransformControls.addEventListener('change', () => {
-      const targetObj = threeTransformControls.object;
-      if (targetObj && targetObj.userData && targetObj.userData.itemIndex !== undefined) {
-        const idx = targetObj.userData.itemIndex;
-        const item = State.placedItems[idx];
-        if (item) {
-          const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
-          const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
-          item.x = Math.round(canvasCoords.x - item.width / 2);
-          item.y = Math.round(canvasCoords.y - item.height / 2);
-          item.rotation = targetObj.rotation.y;
-          
-          redraw();
-          State.saveState();
+      threeTransformControls.addEventListener('change', () => {
+        const targetObj = threeTransformControls.object;
+        if (targetObj && targetObj.userData && targetObj.userData.itemIndex !== undefined) {
+          const idx = targetObj.userData.itemIndex;
+          const item = State.placedItems[idx];
+          if (item) {
+            const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
+            const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
+            item.x = Math.round(canvasCoords.x - item.width / 2);
+            item.y = Math.round(canvasCoords.y - item.height / 2);
+            item.rotation = targetObj.rotation.y;
+            
+            redraw();
+            State.saveState();
+          }
         }
-      }
-    });
+      });
 
-    window.addEventListener('keydown', (e) => {
-      if (!threeTransformControls) return;
-      if (e.key === 't' || e.key === 'T' || e.key === 'w' || e.key === 'W') {
-        threeTransformControls.setMode('translate');
-        Exporter.showNotification("✋ Move Mode active");
-      } else if (e.key === 'r' || e.key === 'R' || e.key === 'e' || e.key === 'E') {
-        threeTransformControls.setMode('rotate');
-        Exporter.showNotification("🔄 Rotate Mode active");
-      }
-    });
-  } else {
-    console.warn("THREE.TransformControls is not defined. Desktop drag/rotate is disabled.");
+      window.addEventListener('keydown', (e) => {
+        if (!threeTransformControls) return;
+        if (e.key === 't' || e.key === 'T' || e.key === 'w' || e.key === 'W') {
+          threeTransformControls.setMode('translate');
+          Exporter.showNotification("🔄 Move Mode active");
+        } else if (e.key === 'r' || e.key === 'R' || e.key === 'e' || e.key === 'E') {
+          threeTransformControls.setMode('rotate');
+          Exporter.showNotification("🔄 Rotate Mode active");
+        }
+      });
+    } else {
+      console.warn("THREE.TransformControls is not defined. Desktop drag/rotate is disabled.");
+    }
+
+    // 7. Raycaster click-to-select furniture in 3D
+    setup3DSelection();
+
+    isThreeInitialized = true;
+    animateThree();
+  } catch (err) {
+    console.error("3D Initialization failed:", err);
+    const container = document.getElementById('three-container');
+    if (container) {
+      container.innerHTML = `
+        <div style="padding: 20px; color: #d32f2f; background: #ffebee; border: 1px solid #ffcdd2; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; line-height: 1.5; margin: 15px; text-align: left; max-width: 600px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          <h4 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 600; color: #c62828;">⚠️ 3D Initialization Error</h4>
+          <p style="margin: 0 0 10px 0;">An error occurred while loading the 3D graphics view:</p>
+          <pre style="margin: 0; background: rgba(0,0,0,0.06); padding: 12px; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; font-family: monospace; font-size: 12px; border: 1px solid rgba(0,0,0,0.1);">${err.stack || err.message || err}</pre>
+          <p style="margin: 12px 0 0 0; font-size: 11px; color: #666; font-style: italic;">Please share a screenshot of this error box to troubleshoot the issue.</p>
+        </div>
+      `;
+    }
   }
-
-  // 7. Raycaster click-to-select furniture in 3D
-  setup3DSelection();
-
-  isThreeInitialized = true;
-  animateThree();
 }
 
 function setupLighting() {
