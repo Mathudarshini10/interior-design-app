@@ -265,6 +265,7 @@ const UI = {
     form.append('file', file);
     
     try {
+      const localUrl = URL.createObjectURL(file);
       const res = await fetch('/api/upload-blueprint', { method: 'POST', body: form });
       if (!res.ok) throw new Error("Server upload request failed.");
       
@@ -274,6 +275,8 @@ const UI = {
         return;
       }
       
+      // Use local URL for rendering the canvas background to bypass serverless 404s
+      data.url = localUrl;
       State.blueprintData = data;
       
       // Load background image
@@ -295,10 +298,10 @@ const UI = {
       };
       img.onerror = (err) => {
         console.error("Blueprint image loading failed:", img.src, err);
-        alert("❌ Failed to render the blueprint background image. Try another file format.");
+        alert("❌ Failed to render the blueprint background image.");
         this.changeStep(2);
       };
-      img.src = encodeURI(data.url);
+      img.src = localUrl;
       
     } catch (err) {
       alert("❌ Blueprint recognition failed: " + err.message);
