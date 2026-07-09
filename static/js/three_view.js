@@ -43,42 +43,46 @@ function initThree() {
   setupLighting();
 
   // 6.5. Transform Controls Setup
-  threeTransformControls = new THREE.TransformControls(threeCamera, threeRenderer.domElement);
-  threeTransformControls.size = 0.75;
-  threeScene.add(threeTransformControls);
+  if (typeof THREE.TransformControls !== 'undefined') {
+    threeTransformControls = new THREE.TransformControls(threeCamera, threeRenderer.domElement);
+    threeTransformControls.size = 0.75;
+    threeScene.add(threeTransformControls);
 
-  threeTransformControls.addEventListener('dragging-changed', (event) => {
-    threeControls.enabled = !event.value;
-  });
+    threeTransformControls.addEventListener('dragging-changed', (event) => {
+      threeControls.enabled = !event.value;
+    });
 
-  threeTransformControls.addEventListener('change', () => {
-    const targetObj = threeTransformControls.object;
-    if (targetObj && targetObj.userData && targetObj.userData.itemIndex !== undefined) {
-      const idx = targetObj.userData.itemIndex;
-      const item = State.placedItems[idx];
-      if (item) {
-        const scale = State.blueprintData.metadata.scale_pixels_per_meter || 60.0;
-        const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
-        item.x = Math.round(canvasCoords.x - item.width / 2);
-        item.y = Math.round(canvasCoords.y - item.height / 2);
-        item.rotation = targetObj.rotation.y;
-        
-        redraw();
-        State.saveState();
+    threeTransformControls.addEventListener('change', () => {
+      const targetObj = threeTransformControls.object;
+      if (targetObj && targetObj.userData && targetObj.userData.itemIndex !== undefined) {
+        const idx = targetObj.userData.itemIndex;
+        const item = State.placedItems[idx];
+        if (item) {
+          const scale = State.blueprintData.metadata.scale_pixels_per_meter || 60.0;
+          const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
+          item.x = Math.round(canvasCoords.x - item.width / 2);
+          item.y = Math.round(canvasCoords.y - item.height / 2);
+          item.rotation = targetObj.rotation.y;
+          
+          redraw();
+          State.saveState();
+        }
       }
-    }
-  });
+    });
 
-  window.addEventListener('keydown', (e) => {
-    if (!threeTransformControls) return;
-    if (e.key === 't' || e.key === 'T' || e.key === 'w' || e.key === 'W') {
-      threeTransformControls.setMode('translate');
-      Exporter.showNotification("✋ Move Mode active");
-    } else if (e.key === 'r' || e.key === 'R' || e.key === 'e' || e.key === 'E') {
-      threeTransformControls.setMode('rotate');
-      Exporter.showNotification("🔄 Rotate Mode active");
-    }
-  });
+    window.addEventListener('keydown', (e) => {
+      if (!threeTransformControls) return;
+      if (e.key === 't' || e.key === 'T' || e.key === 'w' || e.key === 'W') {
+        threeTransformControls.setMode('translate');
+        Exporter.showNotification("✋ Move Mode active");
+      } else if (e.key === 'r' || e.key === 'R' || e.key === 'e' || e.key === 'E') {
+        threeTransformControls.setMode('rotate');
+        Exporter.showNotification("🔄 Rotate Mode active");
+      }
+    });
+  } else {
+    console.warn("THREE.TransformControls is not defined. Desktop drag/rotate is disabled.");
+  }
 
   // 7. Raycaster click-to-select furniture in 3D
   setup3DSelection();
@@ -1085,10 +1089,11 @@ function setup3DSelection() {
         
         // Highlight in 3D
         highlight3DItem(selectedGroup);
-        
-        // Attach Transform Controls Gizmo!
+                // Attach Transform Controls Gizmo!
         selectedGroup.userData.itemIndex = bestItemIdx;
-        threeTransformControls.attach(selectedGroup);
+        if (threeTransformControls) {
+          threeTransformControls.attach(selectedGroup);
+        }
         
         Exporter.showNotification(`🎯 Selected: ${item.name}`);
       }
