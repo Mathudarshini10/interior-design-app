@@ -370,20 +370,28 @@ function build3DHouse() {
   const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
   
   // Calculate bounding box center of all wall points to center the house in 3D
+  let validWallsFound = false;
   if (State.blueprintData.walls.length > 0) {
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     State.blueprintData.walls.forEach(w => {
+      if (typeof w.x1 !== 'number' || isNaN(w.x1) || typeof w.x2 !== 'number' || isNaN(w.x2)) return;
+      if (typeof w.y1 !== 'number' || isNaN(w.y1) || typeof w.y2 !== 'number' || isNaN(w.y2)) return;
       minX = Math.min(minX, w.x1, w.x2);
       maxX = Math.max(maxX, w.x1, w.x2);
       minY = Math.min(minY, w.y1, w.y2);
       maxY = Math.max(maxY, w.y1, w.y2);
+      validWallsFound = true;
     });
-    houseCenterX = (minX + maxX) / 2;
-    houseCenterY = (minY + maxY) / 2;
-  } else {
-    houseCenterX = canvas.width / 2;
-    houseCenterY = canvas.height / 2;
+    if (validWallsFound) {
+      houseCenterX = (minX + maxX) / 2;
+      houseCenterY = (minY + maxY) / 2;
+    }
+  }
+  
+  if (!validWallsFound) {
+    houseCenterX = 300;
+    houseCenterY = 300;
   }
 
   const wallHeightM = (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.wall_height_cm || 280) / 100;
