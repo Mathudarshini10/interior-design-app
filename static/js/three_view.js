@@ -1030,49 +1030,11 @@ function create3DFurniture(name, x, z, w, d, rotation, yOffsetM = 0, customColor
 function fit3DCamera() {
   if (!threeControls || !threeCamera) return;
 
-  const box = new THREE.Box3();
-  let hasObjects = false;
-  threeScene.traverse(child => {
-    if (child.isMesh && child.name !== 'ground_grid' && child.name !== 'Sky') {
-      box.expandByObject(child);
-      hasObjects = true;
-    }
-  });
-
-  if (!hasObjects) {
-    threeCamera.position.set(0, 12, 12);
-    threeControls.target.set(0, 0, 0);
-    threeControls.update();
-    return;
-  }
-
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-
-  // NaN guards for layout bounding center
-  if (isNaN(center.x) || !isFinite(center.x)) center.x = 0;
-  if (isNaN(center.y) || !isFinite(center.y)) center.y = 0;
-  if (isNaN(center.z) || !isFinite(center.z)) center.z = 0;
-
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const fov = threeCamera.fov * (Math.PI / 180);
-  let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-
-  // Add zoom padding and clamp minimum camera distance to prevent clipping inside meshes
-  cameraZ *= 1.35;
-  if (isNaN(cameraZ) || !isFinite(cameraZ) || cameraZ < 4.5) {
-    cameraZ = 4.5;
-  }
-  
-  // Center camera and target
-  threeCamera.position.set(center.x, cameraZ * 0.8, center.z + cameraZ * 0.8);
-  threeControls.target.copy(center);
-
-  // Set limits
-  threeControls.minDistance = 2;
-  threeControls.maxDistance = maxDim * 5;
+  // Set a guaranteed overview perspective angle looking directly at the centered house layout
+  threeCamera.position.set(0, 12, 16);
+  threeControls.target.set(0, 0, 0);
+  threeControls.minDistance = 1;
+  threeControls.maxDistance = 150;
   threeControls.update();
 }
 
