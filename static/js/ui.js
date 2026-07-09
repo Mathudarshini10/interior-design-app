@@ -622,7 +622,7 @@ const UI = {
       `;
     }
     else if (type === 'room') {
-      const customMat = State.materialsMap.rooms[selectedRoomIndex] || {};
+      const customMat = State.materialsMap.rooms[State.selectedRoomIndex] || {};
       html = `
         <label>Room Outline Properties</label>
         <div class="prop-row">Area: <span class="prop-value" style="color:#2e7d32;">${object.area_sq_m} m²</span></div>
@@ -755,16 +755,16 @@ const UI = {
   },
 
   updateRoomProp(prop, val) {
-    if (selectedRoomIndex === null || !State.blueprintData) return;
+    if (State.selectedRoomIndex === null || !State.blueprintData) return;
     State.saveHistory();
-    const room = State.blueprintData.rooms[selectedRoomIndex];
+    const room = State.blueprintData.rooms[State.selectedRoomIndex];
     room[prop] = val;
     
     // Save to room materials map too
-    if (!State.materialsMap.rooms[selectedRoomIndex]) {
-      State.materialsMap.rooms[selectedRoomIndex] = { floor: 'wood', wall: 'plaster', ceiling: 'ceiling' };
+    if (!State.materialsMap.rooms[State.selectedRoomIndex]) {
+      State.materialsMap.rooms[State.selectedRoomIndex] = { floor: 'wood', wall: 'plaster', ceiling: 'ceiling' };
     }
-    State.materialsMap.rooms[selectedRoomIndex][prop] = val;
+    State.materialsMap.rooms[State.selectedRoomIndex][prop] = val;
     
     if (State.viewMode === '3d') build3DHouse();
     else redraw();

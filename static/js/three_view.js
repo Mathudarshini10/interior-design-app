@@ -377,6 +377,8 @@ function build3DHouse() {
     floorMesh.rotation.x = -Math.PI / 2;
     floorMesh.position.y = -0.001;
     floorMesh.receiveShadow = true;
+    floorMesh.userData = { type: 'floor', roomIndex: roomIdx };
+    floorMesh.name = 'floor_' + roomIdx;
     threeScene.add(floorMesh);
 
     // B. Concrete Slab Foundation (30cm thick slab base underneath floor)
@@ -1039,8 +1041,16 @@ function setup3DSelection() {
     const intersects = raycaster.intersectObjects(threeScene.children, true);
     
     let selectedGroup = null;
+    let clickedFloorObj = null;
+
     for (let i = 0; i < intersects.length; i++) {
       let obj = intersects[i].object;
+
+      // Check if it's a floor mesh
+      if (obj.userData && obj.userData.type === 'floor') {
+        if (!clickedFloorObj) clickedFloorObj = obj;
+      }
+
       // Traverse up to find the group name of placed furniture
       while (obj && obj !== threeScene) {
         if (obj.isGroup && obj.name) {
@@ -1053,7 +1063,7 @@ function setup3DSelection() {
     }
 
     if (selectedGroup) {
-      const scale = State.blueprintData.metadata.scale_pixels_per_meter || 60.0;
+      const scale = (State.blueprintData && State.blueprintData.metadata) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
       let bestItemIdx = null;
       let bestDist = Infinity;
 
@@ -1082,9 +1092,25 @@ function setup3DSelection() {
         
         Exporter.showNotification(`🎯 Selected: ${item.name}`);
       }
+    } else if (clickedFloorObj) {
+      // Room floor selected directly in 3D!
+      State.selectedItem = null;
+      if (threeTransformControls) {
+        threeTransformControls.detach();
+      }
+
+      const roomIdx = clickedFloorObj.userData.roomIndex;
+      State.selectedRoomIndex = roomIdx;
+      
+      const roomData = State.blueprintData.rooms[roomIdx];
+      UI.showPropertiesPanel('room', roomData);
+      highlight3DItem(clickedFloorObj);
+
+      Exporter.showNotification(`🎯 Selected Room: ${roomData.name}`);
     } else {
       // Clicked on empty space: clear selection
       State.selectedItem = null;
+      State.selectedRoomIndex = null;
       if (selectionBoxHelper && threeScene) {
         threeScene.remove(selectionBoxHelper);
         selectionBoxHelper = null;
