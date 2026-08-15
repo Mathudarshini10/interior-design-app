@@ -1257,13 +1257,60 @@ function recalculateRoomDimensions() {
 function autoDetectRoomsFromWalls() {
   if (!blueprintData || !blueprintData.walls || blueprintData.walls.length === 0) return;
   
-  const walls = blueprintData.walls;
-  const vertices = [];
+  // Clone walls list to perform splitting on intersected segments without modifying original state
+  const walls = JSON.parse(JSON.stringify(blueprintData.walls));
   
+  // Preprocessing: Split walls at T-junctions/cross-junctions
+  let splitOccurred = true;
+  let safetyLimit = 0;
+  while (splitOccurred && safetyLimit < 15) {
+    splitOccurred = false;
+    safetyLimit++;
+    for (let i = 0; i < walls.length; i++) {
+      const w = walls[i];
+      const ax = w.x1, ay = w.y1;
+      const bx = w.x2, by = w.y2;
+      const wallLen = Math.hypot(bx - ax, by - ay);
+      if (wallLen < 5) continue;
+      
+      let splitPt = null;
+      for (let j = 0; j < walls.length; j++) {
+        if (i === j) continue;
+        const endpoints = [
+          { x: walls[j].x1, y: walls[j].y1 },
+          { x: walls[j].x2, y: walls[j].y2 }
+        ];
+        for (const pt of endpoints) {
+          if (Math.hypot(pt.x - ax, pt.y - ay) < 10 || Math.hypot(pt.x - bx, pt.y - by) < 10) {
+            continue;
+          }
+          const t = ((pt.x - ax) * (bx - ax) + (pt.y - ay) * (by - ay)) / (wallLen * wallLen);
+          if (t > 0.02 && t < 0.98) {
+            const projX = ax + t * (bx - ax);
+            const projY = ay + t * (by - ay);
+            if (Math.hypot(pt.x - projX, pt.y - projY) < 10) {
+              splitPt = { x: projX, y: projY };
+              break;
+            }
+          }
+        }
+        if (splitPt) break;
+      }
+      if (splitPt) {
+        const w1 = { ...w, x2: splitPt.x, y2: splitPt.y, id: w.id + '_s1' };
+        const w2 = { ...w, x1: splitPt.x, y1: splitPt.y, id: w.id + '_s2' };
+        walls.splice(i, 1, w1, w2);
+        splitOccurred = true;
+        break;
+      }
+    }
+  }
+
+  const vertices = [];
   function getVertexId(x, y) {
     for (let i = 0; i < vertices.length; i++) {
       const v = vertices[i];
-      if (Math.hypot(v.x - x, v.y - y) < 8) {
+      if (Math.hypot(v.x - x, v.y - y) < 12) {
         return i;
       }
     }
@@ -1271,7 +1318,7 @@ function autoDetectRoomsFromWalls() {
     return vertices.length - 1;
   }
 
-  // Build graph of connected walls
+  // Build connected graph
   walls.forEach(w => {
     const id1 = getVertexId(w.x1, w.y1);
     const id2 = getVertexId(w.x2, w.y2);
@@ -1281,8 +1328,8 @@ function autoDetectRoomsFromWalls() {
     }
   });
 
-  // Sort adjacent nodes CCW
-  vertices.forEach((v, index) => {
+  // Sort adj lists CCW
+  vertices.forEach(v => {
     v.adj.sort((a, b) => {
       const angleA = Math.atan2(vertices[a].y - v.y, vertices[a].x - v.x);
       const angleB = Math.atan2(vertices[b].y - v.y, vertices[b].x - v.x);
@@ -1308,35 +1355,31 @@ function autoDetectRoomsFromWalls() {
       while (true) {
         visited.add(curr + "->" + next);
         path.push(next);
-        
         const nextAdj = vertices[next].adj;
         const idx = nextAdj.indexOf(curr);
         const rightIdx = (idx + 1) % nextAdj.length;
         
         curr = next;
         next = nextAdj[rightIdx];
-
         if (curr === u && next === v) break;
         loopCount++;
-        if (loopCount > 100) break;
+        if (loopCount > 120) break;
       }
 
       if (path.length >= 3) {
         let signedArea = 0;
         const polyPoints = path.map(idx => [vertices[idx].x, vertices[idx].y]);
-        
         for (let idx = 0; idx < polyPoints.length; idx++) {
           const nextIdx = (idx + 1) % polyPoints.length;
           signedArea += polyPoints[idx][0] * polyPoints[nextIdx][1] - polyPoints[nextIdx][0] * polyPoints[idx][1];
         }
         
-        // Filter interior faces
-        if (Math.abs(signedArea) > 2000) {
+        // Lower threshold to 400 pixels squared to detect small rooms
+        if (Math.abs(signedArea) > 400) {
           let sumX = 0, sumY = 0;
           polyPoints.forEach(p => { sumX += p[0]; sumY += p[1]; });
           const cx = sumX / polyPoints.length;
           const cy = sumY / polyPoints.length;
-
           faces.push({
             name: "Room",
             polygon: polyPoints,
@@ -1347,10 +1390,10 @@ function autoDetectRoomsFromWalls() {
     }
   }
 
-  // Remove identical faces
+  // Filter duplicates
   const uniqueFaces = [];
   faces.forEach(f => {
-    const dup = uniqueFaces.find(uf => Math.hypot(uf.centroid[0] - f.centroid[0], uf.centroid[1] - f.centroid[1]) < 15);
+    const dup = uniqueFaces.find(uf => Math.hypot(uf.centroid[0] - f.centroid[0], uf.centroid[1] - f.centroid[1]) < 20);
     if (!dup) uniqueFaces.push(f);
   });
 
@@ -1364,7 +1407,6 @@ function autoDetectRoomsFromWalls() {
       else if (idx > 3) rName = "Office";
       face.name = rName;
     });
-
     blueprintData.rooms = uniqueFaces;
     recalculateRoomDimensions();
   }
