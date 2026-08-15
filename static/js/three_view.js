@@ -350,6 +350,13 @@ function build3DHouse() {
   try {
     if (!isThreeInitialized) return;
 
+    // Auto detect rooms from walls if rooms list is empty
+    if (State.blueprintData && State.blueprintData.walls && (!State.blueprintData.rooms || State.blueprintData.rooms.length === 0)) {
+      if (window.autoDetectRoomsFromWalls) {
+        window.autoDetectRoomsFromWalls();
+      }
+    }
+
     // Force resize to match current visible container dimensions (prevent 0x0 canvas bug)
     if (threeRenderer && threeCamera && threeContainer) {
       const w = threeContainer.clientWidth || 640;

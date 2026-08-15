@@ -1253,3 +1253,121 @@ function recalculateRoomDimensions() {
     room.depth_m = ((maxY - minY) / scale).toFixed(1);
   });
 }
+
+function autoDetectRoomsFromWalls() {
+  if (!blueprintData || !blueprintData.walls || blueprintData.walls.length === 0) return;
+  
+  const walls = blueprintData.walls;
+  const vertices = [];
+  
+  function getVertexId(x, y) {
+    for (let i = 0; i < vertices.length; i++) {
+      const v = vertices[i];
+      if (Math.hypot(v.x - x, v.y - y) < 8) {
+        return i;
+      }
+    }
+    vertices.push({ x, y, adj: [] });
+    return vertices.length - 1;
+  }
+
+  // Build graph of connected walls
+  walls.forEach(w => {
+    const id1 = getVertexId(w.x1, w.y1);
+    const id2 = getVertexId(w.x2, w.y2);
+    if (id1 !== id2) {
+      if (!vertices[id1].adj.includes(id2)) vertices[id1].adj.push(id2);
+      if (!vertices[id2].adj.includes(id1)) vertices[id2].adj.push(id1);
+    }
+  });
+
+  // Sort adjacent nodes CCW
+  vertices.forEach((v, index) => {
+    v.adj.sort((a, b) => {
+      const angleA = Math.atan2(vertices[a].y - v.y, vertices[a].x - v.x);
+      const angleB = Math.atan2(vertices[b].y - v.y, vertices[b].x - v.x);
+      return angleA - angleB;
+    });
+  });
+
+  const visited = new Set();
+  const faces = [];
+
+  for (let u = 0; u < vertices.length; u++) {
+    const adj = vertices[u].adj;
+    for (let i = 0; i < adj.length; i++) {
+      const v = adj[i];
+      const edgeKey = u + "->" + v;
+      if (visited.has(edgeKey)) continue;
+
+      const path = [u];
+      let curr = u;
+      let next = v;
+      let loopCount = 0;
+      
+      while (true) {
+        visited.add(curr + "->" + next);
+        path.push(next);
+        
+        const nextAdj = vertices[next].adj;
+        const idx = nextAdj.indexOf(curr);
+        const rightIdx = (idx + 1) % nextAdj.length;
+        
+        curr = next;
+        next = nextAdj[rightIdx];
+
+        if (curr === u && next === v) break;
+        loopCount++;
+        if (loopCount > 100) break;
+      }
+
+      if (path.length >= 3) {
+        let signedArea = 0;
+        const polyPoints = path.map(idx => [vertices[idx].x, vertices[idx].y]);
+        
+        for (let idx = 0; idx < polyPoints.length; idx++) {
+          const nextIdx = (idx + 1) % polyPoints.length;
+          signedArea += polyPoints[idx][0] * polyPoints[nextIdx][1] - polyPoints[nextIdx][0] * polyPoints[idx][1];
+        }
+        
+        // Filter interior faces
+        if (Math.abs(signedArea) > 2000) {
+          let sumX = 0, sumY = 0;
+          polyPoints.forEach(p => { sumX += p[0]; sumY += p[1]; });
+          const cx = sumX / polyPoints.length;
+          const cy = sumY / polyPoints.length;
+
+          faces.push({
+            name: "Room",
+            polygon: polyPoints,
+            centroid: [cx, cy]
+          });
+        }
+      }
+    }
+  }
+
+  // Remove identical faces
+  const uniqueFaces = [];
+  faces.forEach(f => {
+    const dup = uniqueFaces.find(uf => Math.hypot(uf.centroid[0] - f.centroid[0], uf.centroid[1] - f.centroid[1]) < 15);
+    if (!dup) uniqueFaces.push(f);
+  });
+
+  if (uniqueFaces.length > 0) {
+    uniqueFaces.sort((a,b) => b.centroid[0] - a.centroid[0]);
+    uniqueFaces.forEach((face, idx) => {
+      let rName = "Living Room";
+      if (idx === 1) rName = "Bedroom";
+      else if (idx === 2) rName = "Kitchen";
+      else if (idx === 3) rName = "Bathroom";
+      else if (idx > 3) rName = "Office";
+      face.name = rName;
+    });
+
+    blueprintData.rooms = uniqueFaces;
+    recalculateRoomDimensions();
+  }
+}
+
+window.autoDetectRoomsFromWalls = autoDetectRoomsFromWalls;

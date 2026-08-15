@@ -46,9 +46,22 @@ const AIDesigner = {
       alert("Please upload a floor plan blueprint first!");
       return;
     }
-    if (roomIndex === null || roomIndex >= State.blueprintData.rooms.length) {
-      alert("Please select a room polygon on the canvas first!");
-      return;
+
+    // Auto detect rooms from walls if rooms list is empty
+    if (!State.blueprintData.rooms || State.blueprintData.rooms.length === 0) {
+      if (window.autoDetectRoomsFromWalls) {
+        window.autoDetectRoomsFromWalls();
+      }
+    }
+
+    // Fallback: default to first room
+    if (roomIndex === null || roomIndex === undefined || roomIndex >= State.blueprintData.rooms.length) {
+      if (State.blueprintData.rooms && State.blueprintData.rooms.length > 0) {
+        roomIndex = 0;
+      } else {
+        alert("No rooms detected in the floor plan to design!");
+        return;
+      }
     }
 
     const room = State.blueprintData.rooms[roomIndex];
