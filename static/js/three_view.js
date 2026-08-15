@@ -451,8 +451,8 @@ function build3DHouse() {
     slabMesh.receiveShadow = true;
     threeScene.add(slabMesh);
 
-    // C. Ceiling Mesh (conditional on showCeiling)
-    if (State.showCeiling !== false) {
+    // C. Ceiling Mesh (conditional on showCeiling and roof style)
+    if (State.showCeiling !== false && State.showRoof !== 'none' && State.showRoof !== undefined) {
       const ceilingGeo = new THREE.ExtrudeGeometry(shape, { depth: 0.04, bevelEnabled: false });
       const ceilingMesh = new THREE.Mesh(ceilingGeo, ceilMat);
       ceilingMesh.rotation.x = -Math.PI / 2;
