@@ -340,6 +340,7 @@ const UI = {
     const propAcc = document.getElementById('properties-accordion');
     const catAcc = document.getElementById('catalog-accordion');
     const matAcc = document.getElementById('materials-accordion');
+    const chatAcc = document.getElementById('ai-chat-accordion');
     
     const step2Actions = document.getElementById('step-2-actions-panel');
     const step2Header = document.getElementById('step-2-actions-header');
@@ -383,6 +384,7 @@ const UI = {
       propAcc.style.display = 'block';
       catAcc.style.display = 'none';
       matAcc.style.display = 'none';
+      if (chatAcc) chatAcc.style.display = 'none';
       
       step2Actions.style.display = 'block';
       step2Header.style.display = 'block';
@@ -440,6 +442,7 @@ const UI = {
       propAcc.style.display = 'block';
       catAcc.style.display = 'block';
       matAcc.style.display = 'block';
+      if (chatAcc) chatAcc.style.display = 'block';
       
       step2Actions.style.display = 'none';
       step2Header.style.display = 'none';

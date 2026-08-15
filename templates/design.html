@@ -99,6 +99,26 @@
           </div>
         </div>
 
+        <!-- Accordion Item: AI Chat Assistant (Homestyler Spark inspired) -->
+        <div class="accordion-item" id="ai-chat-accordion" style="display: none;">
+          <div class="accordion-header" onclick="UI.toggleAccordion(this)">
+            <span>💬 Spark AI Design Chat</span>
+            <span class="chevron">▶</span>
+          </div>
+          <div class="accordion-content">
+            <div id="ai-chat-history" style="height: 160px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 11px; background: rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 8px; font-family: inherit;">
+              <div style="color: var(--accent); font-weight: 700;">🤖 Spark: Hi! I am your AI Design Assistant. Command me to style rooms or paint walls:</div>
+              <div style="color: var(--text-secondary); cursor: pointer; text-decoration: underline;" onclick="sendAIChat('Design this room in luxury style')">💡 "Design this room in luxury style"</div>
+              <div style="color: var(--text-secondary); cursor: pointer; text-decoration: underline;" onclick="sendAIChat('Paint walls to beige')">💡 "Paint walls to beige"</div>
+              <div style="color: var(--text-secondary); cursor: pointer; text-decoration: underline;" onclick="sendAIChat('Clear all furniture')">💡 "Clear all furniture"</div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="ai-chat-input" placeholder="Type design command..." style="flex: 1; padding: 8px 12px; margin: 0; font-size: 12px; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(255,255,255,0.01); color: var(--text-main); outline: none;" onkeydown="if(event.key === 'Enter') triggerAIChat()"/>
+              <button class="nav-btn" onclick="triggerAIChat()" style="padding: 8px 14px; border-radius: 8px;">Send</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Collapsible Catalog Section (Step 4 only) -->
         <div class="accordion-item" id="catalog-accordion" style="display: none;">
           <div class="accordion-header" onclick="UI.toggleAccordion(this)">
@@ -322,5 +342,89 @@
   <script src="/static/js/three_view.js"></script>
   <script src="/static/js/design.js"></script>
   <script src="/static/js/ui.js"></script>
+  <script>
+    function triggerAIChat() {
+      const input = document.getElementById('ai-chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      sendAIChat(text);
+      input.value = '';
+    }
+
+    function sendAIChat(promptText) {
+      const history = document.getElementById('ai-chat-history');
+      
+      const userDiv = document.createElement('div');
+      userDiv.innerHTML = `<span style="color: #3b82f6; font-weight: 700;">👤 You:</span> ${promptText}`;
+      history.appendChild(userDiv);
+      history.scrollTop = history.scrollHeight;
+
+      setTimeout(() => {
+        let responseText = "I don't understand that instruction. Try: 'clear all furniture', 'change floor to marble', or 'apply Scandinavian style'.";
+        const prompt = promptText.toLowerCase();
+
+        if (prompt.includes("clear") && prompt.includes("furniture")) {
+          State.saveHistory();
+          State.placedItems = [];
+          if (State.viewMode === '3d') build3DHouse();
+          else redraw();
+          if (window.updateTotal) window.updateTotal();
+          responseText = "🧹 I have cleared all furniture elements from your canvas.";
+        } 
+        else if (prompt.includes("floor") && (prompt.includes("marble") || prompt.includes("wood") || prompt.includes("concrete") || prompt.includes("tiles") || prompt.includes("brick"))) {
+          let mat = "wood";
+          if (prompt.includes("marble")) mat = "marble";
+          else if (prompt.includes("concrete")) mat = "concrete";
+          else if (prompt.includes("tiles")) mat = "tiles";
+          else if (prompt.includes("brick")) mat = "brick";
+          
+          State.saveHistory();
+          const roomIdx = State.selectedRoomIndex !== null ? State.selectedRoomIndex : 0;
+          if (!State.materialsMap.rooms[roomIdx]) {
+            State.materialsMap.rooms[roomIdx] = { floor: 'wood', wall: 'plaster', ceiling: 'plaster' };
+          }
+          State.materialsMap.rooms[roomIdx].floor = mat;
+          State.saveProjectLocally();
+          if (State.viewMode === '3d') build3DHouse();
+          else redraw();
+          responseText = `🎨 Applied ${mat} floor material to room layout.`;
+        }
+        else if (prompt.includes("scandinavian") || prompt.includes("modern") || prompt.includes("luxury") || prompt.includes("minimalist") || prompt.includes("industrial")) {
+          let style = "modern";
+          if (prompt.includes("scandinavian")) style = "scandinavian";
+          else if (prompt.includes("luxury")) style = "luxury";
+          else if (prompt.includes("minimalist")) style = "minimalist";
+          else if (prompt.includes("industrial")) style = "industrial";
+          
+          const roomIdx = State.selectedRoomIndex !== null ? State.selectedRoomIndex : 0;
+          AIDesigner.generateDesign(roomIdx, style);
+          responseText = `🤖 Spark AI has arranged your room layout in ${style} style!`;
+        }
+        else if (prompt.includes("paint") || prompt.includes("color") || prompt.includes("wall")) {
+          let hex = "#ffffff";
+          if (prompt.includes("blue")) hex = "#6c8ebf";
+          else if (prompt.includes("dark") || prompt.includes("black")) hex = "#1e1e2f";
+          else if (prompt.includes("gray")) hex = "#e0e0e0";
+          else if (prompt.includes("beige")) hex = "#faf8f5";
+          
+          State.saveHistory();
+          const roomIdx = State.selectedRoomIndex !== null ? State.selectedRoomIndex : 0;
+          if (!State.materialsMap.rooms[roomIdx]) {
+            State.materialsMap.rooms[roomIdx] = { floor: 'wood', wall: 'plaster', ceiling: 'plaster' };
+          }
+          State.materialsMap.rooms[roomIdx].wallColor = hex;
+          State.saveProjectLocally();
+          if (State.viewMode === '3d') build3DHouse();
+          else redraw();
+          responseText = `🎨 Painted room walls to: ${hex}.`;
+        }
+
+        const aiDiv = document.createElement('div');
+        aiDiv.innerHTML = `<span style="color: var(--accent); font-weight: 700;">🤖 Spark:</span> ${responseText}`;
+        history.appendChild(aiDiv);
+        history.scrollTop = history.scrollHeight;
+      }, 800);
+    }
+  </script>
 </body>
 </html>

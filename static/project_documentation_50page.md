@@ -341,6 +341,33 @@ function setup3DSelection() {
 
 ---
 
+## Chapter 10: Comparative Feature Analysis Matrix
+
+Below is a detailed comparative analysis mapping HomeForge AI\'s implementation strategy against leading commercial products like RoomSketcher, Planner 5D, Homestyler, and IKEA Kreativ.
+
+| Feature | HomeForge AI Implementation | Industry Reference Platform | Technical Integration Strategy |
+| :--- | :--- | :--- | :--- |
+| **Upload blueprint/image/PDF** | Supported (Step 1) | RoomSketcher + Planner 5D | Uses OpenCV contours detection (BlueprintAnalyzer) |
+| **AI detects rooms, walls, doors & windows** | Supported (Backend) | RoomSketcher | Procedural detection via image segmentation algorithms |
+| **Editable 2D floor-plan editor** | Supported (Step 2) | RoomSketcher + Planner 5D | HTML5 Canvas 2D Vector context rendering |
+| **Automatic measurements & area** | Supported (Step 2 & 3) | RoomSketcher | Geometric polygon area integration (\ ft$) |
+| **Drag-and-drop furniture** | Supported (Step 4) | Planner 5D + RoomSketcher | Raycast mouse coordinates intersection |
+| **Materials, colors & textures** | Supported (Step 4) | Planner 5D + Homestyler | Physically Based Rendering (PBR) Shaders |
+| **AI design recommendations** | Supported (Step 4) | Homestyler | Pattern matching based on selected Room Styles |
+| **AI conversational designer** | Supported (Side Panel) | Homestyler Spark | Text prompt layout mutation mappings |
+| **Automatic 3D conversion** | Supported (Step 3) | Planner 5D + RoomSketcher | Three.js ExtrudeGeometry vector compiler |
+| **3D walkthrough** | Supported (Step 3 & 4) | RoomSketcher | OrbitControls camera navigation |
+| **Realistic rendering** | Supported (WebGL) | Planner 5D + Homestyler | Ambient, Directional, and Point light rigging |
+| **Scan existing room** | Roadmap | IKEA Kreativ + RoomSketcher | WebXR camera depth mapping extension |
+| **Furniture/product catalog** | Supported (Catalog) | IKEA Kreativ | Local JSON product database with WebGL inspector |
+| **Furniture automatically scaled** | Supported (Canvas) | IKEA Kreativ | Dynamic bounding boxes mapping scaling constants |
+| **Budget & quotation** | Supported (Live Estimate) | HomeForge AI Unique | Dynamic price aggregation and PDF quotation exports |
+| **Save projects** | Supported (LocalStorage) | All Platforms | Centralized state proxy serializing to localStorage |
+| **Generate final design/quotation** | Supported (Exporter) | HomeForge AI Unique | OBJ, GLB, and text receipt exports |
+
+---
+
+
 ## 5. Deployment Guidelines & Environment Verification
 
 ### 5.1 Local Server Configuration
