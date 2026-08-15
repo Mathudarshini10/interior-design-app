@@ -737,6 +737,7 @@ const UI = {
     }
     State.materialsMap.walls[selectedWall.id][prop] = val;
 
+    State.persist();
     if (State.viewMode === '3d') build3DHouse();
     else redraw();
   },
@@ -745,6 +746,7 @@ const UI = {
     if (!selectedDoor) return;
     State.saveHistory();
     selectedDoor[prop] = val;
+    State.persist();
     if (State.viewMode === '3d') build3DHouse();
     else redraw();
   },
@@ -753,6 +755,7 @@ const UI = {
     if (!selectedWindow) return;
     State.saveHistory();
     selectedWindow[prop] = val;
+    State.persist();
     if (State.viewMode === '3d') build3DHouse();
     else redraw();
   },
@@ -769,6 +772,7 @@ const UI = {
     }
     State.materialsMap.rooms[State.selectedRoomIndex][prop] = val;
     
+    State.persist();
     if (State.viewMode === '3d') build3DHouse();
     else redraw();
   },
@@ -783,6 +787,9 @@ const UI = {
     if (prop === 'length_cm') item.width = Math.round(val * (blueprintData?.metadata?.scale_pixels_per_meter || 60.0) / 100);
     if (prop === 'breadth_cm') item.height = Math.round(val * (blueprintData?.metadata?.scale_pixels_per_meter || 60.0) / 100);
     
+    State.persist();
+    if (State.viewMode === '3d') build3DHouse();
+    else redraw();
   },
 
   triggerDeleteSelection() {

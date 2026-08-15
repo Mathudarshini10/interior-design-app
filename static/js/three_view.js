@@ -58,6 +58,10 @@ function initThree() {
 
       threeTransformControls.addEventListener('dragging-changed', (event) => {
         threeControls.enabled = !event.value;
+        if (!event.value) {
+          State.saveHistory();
+          State.persist();
+        }
       });
 
       threeTransformControls.addEventListener('change', () => {

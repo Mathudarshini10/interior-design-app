@@ -14,13 +14,16 @@
 
   <!-- TOP NAVIGATION BAR -->
   <header class="top-nav">
-    <div class="logo-area">
+    <div class="logo-area" style="cursor: pointer;" onclick="location.href='/dashboard'">
       <span class="logo-icon">🏠</span>
       <h1 class="logo-text">HomeForge <span class="badge">AI PRO</span></h1>
     </div>
 
     <!-- Export & Project Actions -->
     <div class="nav-actions">
+      <!-- Dashboard Link -->
+      <a href="/dashboard" class="nav-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.05);"><span style="font-size:14px;">📂</span> Dashboard</a>
+      
       <!-- Auto Save Indicator -->
       <span id="save-indicator">⚡ Saved</span>
 

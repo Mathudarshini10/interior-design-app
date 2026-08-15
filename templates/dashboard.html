@@ -2,35 +2,833 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="/static/css/style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DesignStudio Dashboard - Manage Projects</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-dark: #09090e;
+      --secondary-dark: #121224;
+      --accent: #e94560;
+      --accent-hover: #ff6b81;
+      --text-main: #f5f5f7;
+      --text-muted: #8c8c9e;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.05);
+      --glass-blur: 20px;
+      --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.4);
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--primary-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Ambient Glow Backgrounds */
+    .ambient-light {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+    .ambient-light-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      top: -150px;
+      right: -100px;
+    }
+    .ambient-light-2 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+      bottom: -100px;
+      left: -100px;
+    }
+
+    /* HEADER */
+    header {
+      height: 70px;
+      padding: 0 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(9, 9, 14, 0.6);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      position: relative;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+    .logo span { font-size: 24px; }
+    .logo h1 { font-size: 20px; font-weight: 800; }
+    .logo h1 span { color: var(--accent); }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    nav a:hover, nav a.active {
+      color: var(--text-main);
+    }
+    
+    .nav-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s, transform 0.2s;
+    }
+    .nav-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    /* CONTAINER */
+    .dashboard-container {
+      flex: 1;
+      padding: 40px 10%;
+      z-index: 5;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+    @media (max-width: 1024px) {
+      .dashboard-container {
+        padding: 30px 5%;
+      }
+      header {
+        padding: 0 24px;
+      }
+    }
+
+    /* METRICS ROW */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .metrics-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 480px) {
+      .metrics-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .metric-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      backdrop-filter: blur(12px);
+    }
+    .metric-title {
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .metric-val {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .metric-foot {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .metric-foot span {
+      color: #10b981;
+      font-weight: 700;
+    }
+
+    /* PROJECTS HEADER */
+    .projects-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .projects-header h3 {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+    
+    .filters-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .search-input {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 10px 16px;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      width: 240px;
+      transition: all 0.3s;
+    }
+    .search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 10px rgba(233, 69, 96, 0.1);
+    }
+    .filter-select {
+      background: var(--secondary-dark);
+      border: 1px solid var(--glass-border);
+      padding: 10px 16px;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* PROJECTS GRID */
+    .project-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+    
+    .project-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .project-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+    
+    .card-room-icon {
+      font-size: 32px;
+      width: 60px;
+      height: 60px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 750;
+      color: var(--text-main);
+    }
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    
+    .card-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .card-tag {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--glass-border);
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .card-tag.style-tag {
+      background: rgba(233, 69, 96, 0.05);
+      border-color: rgba(233, 69, 96, 0.15);
+      color: var(--accent);
+    }
+    
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--glass-border);
+      padding-top: 12px;
+      margin-top: 4px;
+    }
+    .card-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: #10b981;
+    }
+    .card-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Hover Overlay Actions */
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+    .card-action-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 12px;
+      font-weight: 750;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-edit {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-edit:hover { background: var(--accent-hover); }
+    .btn-action-outline {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+    }
+    .btn-action-outline:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    
+    /* NEW PROJECT CARD */
+    .new-project-card {
+      border: 2px dashed rgba(255, 255, 255, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text-muted);
+      min-height: 250px;
+      background: none;
+    }
+    .new-project-card:hover {
+      border-color: var(--accent);
+      color: var(--text-main);
+      background: rgba(255,255,255,0.01);
+    }
+    .new-project-card span {
+      font-size: 40px;
+    }
+    .new-project-card h4 {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* MODAL CONTAINER */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+    .modal {
+      background: var(--secondary-dark);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      width: 460px;
+      padding: 32px;
+      box-shadow: var(--shadow-premium);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    .modal-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .modal-form-group label {
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .modal-form input, .modal-form select, .modal-form textarea {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      padding: 12px;
+      border-radius: 10px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+    }
+    .modal-form input:focus, .modal-form select:focus, .modal-form textarea:focus {
+      border-color: var(--accent);
+    }
+    
+    .modal-form button[type="submit"] {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 750;
+      font-size: 13.5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .modal-form button[type="submit"]:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Toast Alert */
+    .toast {
+      position: fixed;
+      bottom: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      color: #121214;
+      padding: 12px 28px;
+      border-radius: 30px;
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      z-index: 2000;
+      transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .toast.show {
+      bottom: 40px;
+    }
+  </style>
 </head>
 <body>
+  <div class="ambient-light ambient-light-1"></div>
+  <div class="ambient-light ambient-light-2"></div>
+
+  <!-- HEADER -->
   <header>
-    <h1>🏠 DesignStudio</h1>
+    <a href="/" class="logo">
+      <span>🏠</span>
+      <h1>HomeForge <span>AI</span></h1>
+    </a>
     <nav>
-      <a href="/">Home</a>
-      <a href="/design">Design Room</a>
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/catalog">Catalog</a>
+      <a href="/design" class="nav-btn">New Design</a>
     </nav>
   </header>
 
-  <div class="dashboard-layout">
-    <h2>Your Projects</h2>
-    <div class="project-grid">
-      <div class="project-card" onclick="location.href='/design'">
-        <h4>+ New Project</h4>
-        <p>Start a fresh room design</p>
+  <!-- DASHBOARD BODY -->
+  <main class="dashboard-container">
+    <!-- METRICS -->
+    <section class="metrics-row">
+      <div class="metric-card">
+        <div class="metric-title">Active Projects</div>
+        <div class="metric-val" id="metric-projects">0</div>
+        <div class="metric-foot">Stored in local cache</div>
       </div>
-      <div class="project-card">
-        <h4>Living Room Design</h4>
-        <p>Modern style · ₹45,000 estimated</p>
+      <div class="metric-card">
+        <div class="metric-title">Total Valuation</div>
+        <div class="metric-val" id="metric-budget">₹0</div>
+        <div class="metric-foot">Aggregated furniture cost</div>
       </div>
-      <div class="project-card">
-        <h4>Bedroom Makeover</h4>
-        <p>Classic style · ₹38,500 estimated</p>
+      <div class="metric-card">
+        <div class="metric-title">Placed Assets</div>
+        <div class="metric-val" id="metric-assets">0</div>
+        <div class="metric-foot">Configured fixtures</div>
       </div>
+      <div class="metric-card">
+        <div class="metric-title">Design Index</div>
+        <div class="metric-val" id="metric-completion">92%</div>
+        <div class="metric-foot">Productivity Score</div>
+      </div>
+    </section>
+
+    <!-- SEARCH & CONTROLS -->
+    <section class="projects-header">
+      <h3>Your Design Workspaces</h3>
+      <div class="filters-bar">
+        <input type="text" class="search-input" id="search-bar" placeholder="Search workspace name..." oninput="renderProjects()"/>
+        <select class="filter-select" id="style-filter" onchange="renderProjects()">
+          <option value="">All Styles</option>
+          <option value="modern">Modern</option>
+          <option value="scandinavian">Scandinavian</option>
+          <option value="minimalist">Minimalist</option>
+          <option value="classic">Classic</option>
+        </select>
+        <button class="nav-btn" onclick="openCreateModal()">+ Create New</button>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <section class="project-grid" id="project-grid"></section>
+  </main>
+
+  <!-- CREATE PROJECT MODAL -->
+  <div class="modal-overlay" id="create-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h4 class="modal-title">Create New Project</h4>
+        <button class="modal-close" onclick="closeCreateModal()">✕</button>
+      </div>
+      <form class="modal-form" onsubmit="handleCreateProject(event)">
+        <div class="modal-form-group">
+          <label for="proj-name">Project Name</label>
+          <input type="text" id="proj-name" placeholder="e.g. Cozy Guestroom Loft" required/>
+        </div>
+        <div class="modal-form-group">
+          <label for="proj-room">Room Sector</label>
+          <select id="proj-room">
+            <option value="Living Room">🛋️ Living Room</option>
+            <option value="Bedroom">🛏️ Bedroom</option>
+            <option value="Kitchen">🍳 Kitchen</option>
+            <option value="Office">🖥️ Office Workspace</option>
+          </select>
+        </div>
+        <div class="modal-form-group">
+          <label for="proj-style">Architectural Style</label>
+          <select id="proj-style">
+            <option value="modern">Modern</option>
+            <option value="scandinavian">Scandinavian</option>
+            <option value="minimalist">Minimalist</option>
+            <option value="classic">Classic</option>
+          </select>
+        </div>
+        <button type="submit">Initialize Workspace</button>
+      </form>
     </div>
   </div>
+
+  <div class="toast" id="toast-banner">Changes updated!</div>
+
+  <script>
+    let projectsList = [];
+    const ROOM_ICONS = {
+      'Living Room': '🛋️', 'Bedroom': '🛏️', 'Kitchen': '🍳', 'Office': '🖥️'
+    };
+
+    function showToast(message) {
+      const toast = document.getElementById('toast-banner');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // Load projects on startup
+    function initProjects() {
+      const data = localStorage.getItem('homeforge_projects');
+      if (data) {
+        projectsList = JSON.parse(data);
+      } else {
+        // Pre-populate with beautiful templates
+        projectsList = [
+          {
+            id: 101,
+            name: "Premium Nordic Living Room",
+            roomType: "Living Room",
+            style: "scandinavian",
+            budget: 45000,
+            assets: 4,
+            modified: new Date().toLocaleDateString(),
+            blueprintData: {
+              metadata: { scale_pixels_per_meter: 60, wall_height_cm: 280, wall_thickness_cm: 15 },
+              walls: [
+                { id: "w_1", x1: 100, y1: 100, x2: 500, y2: 100 },
+                { id: "w_2", x1: 500, y1: 100, x2: 500, y2: 400 },
+                { id: "w_3", x1: 500, y1: 400, x2: 100, y2: 400 },
+                { id: "w_4", x1: 100, y1: 400, x2: 100, y2: 100 }
+              ],
+              rooms: [{ name: "Living Room", polygon: [{x:100,y:100},{x:500,y:100},{x:500,y:400},{x:100,y:400}] }],
+              doors: [{ id: "d_1", x: 200, y: 100, width: 85 }],
+              windows: [{ id: "win_1", x: 400, y: 100, width: 120 }]
+            },
+            placedItems: [
+              { id: 1, name: "Modern Sofa", x: 220, y: 250, width: 132, height: 54, rotation: 0, price: 25000 },
+              { id: 2, name: "Oak Coffee Table", x: 250, y: 180, width: 72, height: 36, rotation: 0, price: 8500 }
+            ]
+          },
+          {
+            id: 102,
+            name: "Compact Bachelor Bedroom",
+            roomType: "Bedroom",
+            style: "minimalist",
+            budget: 35000,
+            assets: 1,
+            modified: new Date().toLocaleDateString(),
+            blueprintData: {
+              metadata: { scale_pixels_per_meter: 60, wall_height_cm: 280, wall_thickness_cm: 15 },
+              walls: [
+                { id: "w_1", x1: 150, y1: 150, x2: 450, y2: 150 },
+                { id: "w_2", x1: 450, y1: 150, x2: 450, y2: 400 },
+                { id: "w_3", x1: 450, y1: 400, x2: 150, y2: 400 },
+                { id: "w_4", x1: 150, y1: 400, x2: 150, y2: 150 }
+              ],
+              rooms: [{ name: "Bedroom", polygon: [{x:150,y:150},{x:450,y:150},{x:450,y:400},{x:150,y:400}] }],
+              doors: [{ id: "d_1", x: 200, y: 150, width: 85 }],
+              windows: []
+            },
+            placedItems: [
+              { id: 8, name: "King Bed", x: 280, y: 250, width: 120, height: 108, rotation: 0, price: 35000 }
+            ]
+          }
+        ];
+        saveProjectsToStorage();
+      }
+      renderProjects();
+    }
+
+    function saveProjectsToStorage() {
+      localStorage.setItem('homeforge_projects', JSON.stringify(projectsList));
+      updateMetrics();
+    }
+
+    function updateMetrics() {
+      document.getElementById('metric-projects').textContent = projectsList.length;
+      
+      const totalBudget = projectsList.reduce((sum, p) => sum + (p.budget || 0), 0);
+      document.getElementById('metric-budget').textContent = '₹' + totalBudget.toLocaleString();
+      
+      const totalAssets = projectsList.reduce((sum, p) => sum + (p.assets || 0), 0);
+      document.getElementById('metric-assets').textContent = totalAssets;
+    }
+
+    function renderProjects() {
+      const search = document.getElementById('search-bar').value.toLowerCase();
+      const style = document.getElementById('style-filter').value;
+      const grid = document.getElementById('project-grid');
+
+      // Filter projects
+      const filtered = projectsList.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search);
+        const matchesStyle = style === "" || p.style === style;
+        return matchesSearch && matchesStyle;
+      });
+
+      let html = `
+        <div class="project-card new-project-card" onclick="openCreateModal()">
+          <span>➕</span>
+          <h4>Initialize Design Studio</h4>
+        </div>
+      `;
+
+      html += filtered.map(p => `
+        <div class="project-card" onclick="openProject(${p.id})">
+          <div class="card-room-icon">${ROOM_ICONS[p.roomType] || '🏠'}</div>
+          <div class="card-meta">
+            <div class="card-title">${p.name}</div>
+            <div class="card-desc">${p.roomType} Workspace</div>
+          </div>
+          <div class="card-tags">
+            <span class="card-tag style-tag">${p.style}</span>
+            <span class="card-tag">${p.assets} Items placed</span>
+          </div>
+          <div class="card-footer">
+            <div class="card-price">₹${p.budget.toLocaleString()}</div>
+            <div class="card-date">Modified: ${p.modified}</div>
+          </div>
+          <div class="card-actions" onclick="event.stopPropagation()">
+            <button class="card-action-btn btn-edit" onclick="openProject(${p.id})">Open Editor</button>
+            <button class="card-action-btn btn-action-outline" onclick="duplicateProject(${p.id})">Duplicate</button>
+            <button class="card-action-btn btn-action-outline" onclick="deleteProject(${p.id})" style="color:#ef5350">✕</button>
+          </div>
+        </div>
+      `).join('');
+
+      grid.innerHTML = html;
+    }
+
+    /* Modal Controls */
+    function openCreateModal() {
+      document.getElementById('create-modal').classList.add('open');
+    }
+    function closeCreateModal() {
+      document.getElementById('create-modal').classList.remove('open');
+    }
+
+    function handleCreateProject(e) {
+      e.preventDefault();
+      const name = document.getElementById('proj-name').value;
+      const room = document.getElementById('proj-room').value;
+      const style = document.getElementById('proj-style').value;
+
+      // Base layout default configurations
+      const defaultBlueprint = {
+        metadata: { scale_pixels_per_meter: 60, wall_height_cm: 280, wall_thickness_cm: 15 },
+        walls: [
+          { id: "wall_1", x1: 150, y1: 150, x2: 450, y2: 150 },
+          { id: "wall_2", x1: 450, y1: 150, x2: 450, y2: 450 },
+          { id: "wall_3", x1: 450, y1: 450, x2: 150, y2: 450 },
+          { id: "wall_4", x1: 150, y1: 450, x2: 150, y2: 150 }
+        ],
+        rooms: [{ name: room, polygon: [{x:150,y:150},{x:450,y:150},{x:450,y:450},{x:150,y:450}] }],
+        doors: [{ id: "door_1", x: 200, y: 150, width: 85 }],
+        windows: [{ id: "win_1", x: 380, y: 150, width: 100 }]
+      };
+
+      const newProj = {
+        id: Date.now(),
+        name: name,
+        roomType: room,
+        style: style,
+        budget: 0,
+        assets: 0,
+        modified: new Date().toLocaleDateString(),
+        blueprintData: defaultBlueprint,
+        placedItems: []
+      };
+
+      projectsList.unshift(newProj);
+      saveProjectsToStorage();
+      closeCreateModal();
+      document.getElementById('proj-name').value = '';
+      renderProjects();
+      showToast("Workspace initialized!");
+
+      // Instantly open the design studio
+      setTimeout(() => {
+        openProject(newProj.id);
+      }, 500);
+    }
+
+    function openProject(id) {
+      const p = projectsList.find(proj => proj.id === id);
+      if (!p) return;
+
+      // Set state configurations locally in editor session
+      localStorage.setItem('homeforge_session', JSON.stringify({
+        blueprintData: p.blueprintData,
+        placedItems: p.placedItems || [],
+        materialsMap: p.materialsMap || { walls: {}, rooms: {} },
+        currentStep: 2,
+        activeProjectId: p.id // Save project ID context inside session
+      }));
+
+      window.location = '/design';
+    }
+
+    function duplicateProject(id) {
+      const p = projectsList.find(proj => proj.id === id);
+      if (!p) return;
+
+      const copy = JSON.parse(JSON.stringify(p));
+      copy.id = Date.now();
+      copy.name += " (Copy)";
+      copy.modified = new Date().toLocaleDateString();
+
+      projectsList.unshift(copy);
+      saveProjectsToStorage();
+      renderProjects();
+      showToast("Workspace duplicated!");
+    }
+
+    function deleteProject(id) {
+      if (!confirm("Are you sure you want to permanently delete this project workspace?")) return;
+      projectsList = projectsList.filter(proj => proj.id !== id);
+      saveProjectsToStorage();
+      renderProjects();
+      showToast("Workspace deleted.");
+    }
+
+    window.onload = initProjects;
+  </script>
 </body>
 </html>
 

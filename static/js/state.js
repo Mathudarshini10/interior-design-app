@@ -232,21 +232,68 @@ const State = {
       currentStyle: this.currentStyle,
       currentStep: this.currentStep
     };
+    
+    // Check if we have an active project ID in the current session
+    const sessionRaw = localStorage.getItem('homeforge_session');
+    let activeProjectId = null;
+    if (sessionRaw) {
+      try {
+        const session = JSON.parse(sessionRaw);
+        activeProjectId = session.activeProjectId;
+        if (activeProjectId) {
+          project.activeProjectId = activeProjectId;
+        }
+      } catch (e) {}
+    }
+    
     localStorage.setItem('homeforge_project_state', JSON.stringify(project));
+    localStorage.setItem('homeforge_session', JSON.stringify(project));
+
+    // Sync back to dashboard projects list
+    if (activeProjectId) {
+      const projectsData = localStorage.getItem('homeforge_projects');
+      if (projectsData) {
+        try {
+          const projects = JSON.parse(projectsData);
+          const idx = projects.findIndex(p => p.id === activeProjectId);
+          if (idx !== -1) {
+            projects[idx].blueprintData = this.blueprintData;
+            projects[idx].placedItems = this.placedItems;
+            projects[idx].materialsMap = this.materialsMap;
+            projects[idx].assets = this.placedItems.length;
+            projects[idx].modified = new Date().toLocaleDateString();
+            
+            // Calculate total budget from placed items
+            const totalBudget = this.placedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+            projects[idx].budget = totalBudget;
+            
+            localStorage.setItem('homeforge_projects', JSON.stringify(projects));
+          }
+        } catch (e) {}
+      }
+    }
+    
     this.updateSaveIndicator();
   },
 
   loadProjectLocally() {
-    const raw = localStorage.getItem('homeforge_project_state');
+    let raw = localStorage.getItem('homeforge_session');
+    if (!raw) {
+      raw = localStorage.getItem('homeforge_project_state');
+    }
     if (!raw) return false;
     try {
       const project = JSON.parse(raw);
       this.placedItems = project.placedItems || [];
       this.blueprintData = project.blueprintData || null;
-      this.materialsMap = project.materialsMap || { rooms: {}, walls: {} };
+      this.materialsMap = project.materialsMap || { rooms: {}, walls: {}, doors: {}, windows: {} };
       this.currentRoom = project.currentRoom || 'Living Room';
       this.currentStyle = project.currentStyle || 'modern';
       this.currentStep = project.currentStep || 1;
+      
+      // Ensure both keys stay in sync
+      localStorage.setItem('homeforge_project_state', raw);
+      localStorage.setItem('homeforge_session', raw);
       return true;
     } catch(e) {
       console.error("Error loading project state:", e);

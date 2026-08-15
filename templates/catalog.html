@@ -2,127 +2,654 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <title>Furniture Catalog</title>
-  <link rel="stylesheet" href="/static/css/style.css"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Furniture Catalog - WebGL Inspector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    .catalog-page { padding: 24px 32px; }
-    .catalog-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-    .filter-bar { display:flex; gap:8px; flex-wrap:wrap; }
-    .filter-btn { background:#f0f0f0; border:1px solid #ddd; border-radius:20px; padding:6px 16px; font-size:12px; cursor:pointer; }
-    .filter-btn.active { background:#1a1a2e; color:white; }
-    .catalog-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:20px; }
-    .catalog-card { background:white; border-radius:14px; border:1px solid #eee; overflow:hidden; cursor:pointer; transition:all 0.2s; }
-    .catalog-card:hover { transform:translateY(-4px); box-shadow:0 8px 24px rgba(0,0,0,0.12); }
-    .card-image { width:100%; height:160px; background:#f5f5f5; display:flex; align-items:center; justify-content:center; font-size:64px; position:relative; }
-    .card-image img { width:100%; height:100%; object-fit:cover; }
-    .card-body { padding:14px; }
-    .card-name { font-size:14px; font-weight:700; margin-bottom:4px; }
-    .card-dims { font-size:11px; color:#888; margin-bottom:6px; }
-    .card-price { font-size:15px; font-weight:700; color:#2e7d32; }
-    .card-badge { position:absolute; top:8px; right:8px; background:#1a1a2e; color:white; font-size:10px; padding:3px 8px; border-radius:10px; }
+    :root {
+      --primary-dark: #09090e;
+      --secondary-dark: #121224;
+      --accent: #e94560;
+      --accent-hover: #ff6b81;
+      --text-main: #f5f5f7;
+      --text-muted: #8c8c9e;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-border: rgba(255, 255, 255, 0.05);
+      --glass-blur: 20px;
+      --shadow-premium: 0 20px 40px rgba(0, 0, 0, 0.4);
+      --font: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
 
-    /* MODAL */
-    .modal-overlay { display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal { background:white; border-radius:16px; width:860px; max-width:95vw; max-height:90vh; overflow:auto; display:flex; }
-    .modal-viewer { width:400px; min-height:400px; background:#f5f5f5; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; border-radius:16px 0 0 16px; }
-    .main-image { width:300px; height:280px; object-fit:contain; border-radius:10px; background:#eee; display:flex; align-items:center; justify-content:center; font-size:80px; }
-    .view-angles { display:flex; gap:8px; margin-top:12px; }
-    .angle-btn { background:#eee; border:none; border-radius:8px; padding:6px 10px; font-size:11px; cursor:pointer; }
-    .angle-btn.active { background:#1a1a2e; color:white; }
-    .modal-info { flex:1; padding:28px; }
-    .modal-name { font-size:22px; font-weight:700; margin-bottom:8px; }
-    .modal-price { font-size:24px; font-weight:700; color:#2e7d32; margin-bottom:16px; }
-    .dim-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
-    .dim-box { background:#f5f5f5; border-radius:8px; padding:10px; text-align:center; }
-    .dim-label { font-size:10px; color:#888; }
-    .dim-value { font-size:16px; font-weight:700; margin-top:2px; }
-    .modal-desc { font-size:13px; color:#666; margin-bottom:20px; line-height:1.6; }
-    .close-btn { position:absolute; top:16px; right:20px; background:none; border:none; font-size:24px; cursor:pointer; color:#666; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--primary-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Ambient Glow Backgrounds */
+    .ambient-light {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.3;
+    }
+    .ambient-light-1 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+      top: -150px;
+      right: -100px;
+    }
+    .ambient-light-2 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #3b82f6 0%, transparent 70%);
+      bottom: -100px;
+      left: -100px;
+    }
+
+    /* HEADER */
+    header {
+      height: 70px;
+      padding: 0 48px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(9, 9, 14, 0.6);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+      position: relative;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+    .logo span { font-size: 24px; }
+    .logo h1 { font-size: 20px; font-weight: 800; }
+    .logo h1 span { color: var(--accent); }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    nav a:hover, nav a.active {
+      color: var(--text-main);
+    }
+    
+    .nav-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12.5px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    /* MAIN CONTAINER */
+    .catalog-container {
+      flex: 1;
+      padding: 40px 10%;
+      z-index: 5;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    @media (max-width: 1024px) {
+      .catalog-container {
+        padding: 30px 5%;
+      }
+      header { padding: 0 24px; }
+    }
+
+    /* FILTERS PANEL */
+    .controls-panel {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      align-items: end;
+      backdrop-filter: blur(12px);
+    }
+    @media (max-width: 768px) {
+      .controls-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+    .panel-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .panel-group label {
+      font-size: 10.5px;
+      font-weight: 750;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .search-input {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .search-input:focus { border-color: var(--accent); }
+    
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pill-btn {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 30px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pill-btn:hover {
+      border-color: rgba(255,255,255,0.15);
+      color: var(--text-main);
+    }
+    .pill-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* PRICE SLIDER */
+    .price-range-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .range-input {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .price-display {
+      font-size: 13px;
+      font-weight: 750;
+      color: var(--text-main);
+      min-width: 90px;
+    }
+
+    /* CATALOG GRID */
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 24px;
+    }
+
+    .catalog-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .catalog-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    }
+    .card-preview {
+      height: 180px;
+      background: rgba(255,255,255,0.01);
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+      position: relative;
+    }
+    .card-badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: rgba(9,9,14,0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 750;
+      color: var(--text-main);
+    }
+    .card-dims {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    }
+    .card-price {
+      font-size: 16px;
+      font-weight: 800;
+      color: #10b981;
+    }
+
+    /* 3D INSPECTOR DETAIL MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+    .modal {
+      background: var(--secondary-dark);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      width: 900px;
+      max-width: 90vw;
+      height: 560px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      box-shadow: var(--shadow-premium);
+      position: relative;
+    }
+    @media (max-width: 768px) {
+      .modal {
+        grid-template-columns: 1fr;
+        height: auto;
+        max-height: 95vh;
+        overflow-y: auto;
+      }
+    }
+    
+    .close-btn {
+      position: absolute;
+      top: 20px; right: 20px;
+      background: rgba(0,0,0,0.4);
+      border: 1px solid var(--glass-border);
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: background 0.3s;
+    }
+    .close-btn:hover { background: rgba(233, 69, 96, 0.4); }
+
+    /* WebGL Viewer Column */
+    .modal-viewer-col {
+      background: #06060a;
+      border-right: 1px solid var(--glass-border);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+    }
+    @media (max-width: 768px) {
+      .modal-viewer-col {
+        height: 280px;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+      }
+    }
+    #catalog-3d-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .viewer-hint {
+      position: absolute;
+      bottom: 16px;
+      font-size: 10px;
+      color: var(--text-muted);
+      pointer-events: none;
+      background: rgba(0,0,0,0.5);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    /* Modal Details Info Column */
+    .modal-info-col {
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow-y: auto;
+      height: 100%;
+    }
+    @media (max-width: 768px) {
+      .modal-info-col {
+        padding: 24px;
+        height: auto;
+      }
+    }
+    .modal-title-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .modal-title-row h2 {
+      font-size: 24px;
+      font-weight: 800;
+    }
+    .modal-price {
+      font-size: 22px;
+      font-weight: 800;
+      color: #10b981;
+    }
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    
+    .dims-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .dim-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+    .dim-lbl { font-size: 10px; font-weight: 750; color: var(--text-muted); text-transform: uppercase; }
+    .dim-val { font-size: 14.5px; font-weight: 800; margin-top: 4px; }
+
+    /* Interactive Customization Swatches */
+    .customize-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border-top: 1px solid var(--glass-border);
+      padding-top: 16px;
+    }
+    .customize-title {
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .swatch-group {
+      display: flex;
+      gap: 8px;
+    }
+    .color-swatch {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.2s;
+    }
+    .color-swatch:hover { transform: scale(1.15); }
+    .color-swatch.active { border-color: white; transform: scale(1.15); }
+
+    .finish-select {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    /* Modal Action Buttons */
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: auto;
+      padding-top: 16px;
+    }
+    .btn-primary {
+      flex: 1.2;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 750;
+      font-size: 13.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.3s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    
+    .btn-secondary {
+      flex: 0.8;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--glass-border);
+      color: var(--text-main);
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 750;
+      font-size: 13.5px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.06); }
   </style>
 </head>
 <body>
+  <div class="ambient-light ambient-light-1"></div>
+  <div class="ambient-light ambient-light-2"></div>
+
+  <!-- HEADER -->
   <header>
-    <h1>🏠 DesignStudio</h1>
+    <a href="/" class="logo">
+      <span>🏠</span>
+      <h1>HomeForge <span>AI</span></h1>
+    </a>
     <nav>
-      <a href="/">Home</a>
-      <a href="/design">Design Room</a>
       <a href="/dashboard">Dashboard</a>
+      <a href="/catalog" class="active">Catalog</a>
+      <a href="/design" class="nav-btn">New Design</a>
     </nav>
   </header>
 
-  <div class="catalog-page">
-    <div class="catalog-header">
-      <div>
-        <h2 style="font-size:22px">🛒 Furniture Catalog</h2>
-        <p style="font-size:13px;color:#888;margin-top:4px">Click any item to view in detail, rotate, and see dimensions</p>
+  <!-- CATALOG CONTAINER -->
+  <main class="catalog-container">
+    <div style="display:flex; flex-direction:column; gap:6px">
+      <h2 style="font-size:24px; font-weight:800">🛒 Material & Sourcing Catalog</h2>
+      <p style="font-size:13.5px; color:var(--text-muted)">Faceted search, material filters, and full 3D layout inspection</p>
+    </div>
+
+    <!-- CONTROLS PANEL -->
+    <section class="controls-panel">
+      <div class="panel-group">
+        <label for="search-box">Search Catalog</label>
+        <input type="text" class="search-input" id="search-box" placeholder="e.g. Sofa, Bed, Lamp..." oninput="filterCatalog()"/>
+      </div>
+      
+      <div class="panel-group">
+        <label>Filter Category</label>
+        <div class="filter-pills" id="category-pills">
+          <button class="pill-btn active" onclick="setCategory('', this)">All</button>
+          <button class="pill-btn" onclick="setCategory('seating', this)">Seating</button>
+          <button class="pill-btn" onclick="setCategory('table', this)">Tables</button>
+          <button class="pill-btn" onclick="setCategory('bedroom', this)">Bedroom</button>
+          <button class="pill-btn" onclick="setCategory('storage', this)">Storage</button>
+          <button class="pill-btn" onclick="setCategory('lighting', this)">Lighting</button>
+        </div>
+      </div>
+
+      <div class="panel-group">
+        <label>Max Budget Limit</label>
+        <div class="price-range-wrapper">
+          <input type="range" class="range-input" id="price-slider" min="3000" max="40000" step="500" value="40000" oninput="updatePriceLimit(this.value)"/>
+          <div class="price-display" id="price-limit-lbl">₹40,000</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GRID -->
+    <section class="catalog-grid" id="catalog-grid"></section>
+  </main>
+
+  <!-- DETAIL MODAL & 3D INSPECTOR -->
+  <div class="modal-overlay" id="detail-modal" onclick="handleOutsideClick(event)">
+    <div class="modal">
+      <button class="close-btn" onclick="closeModal()">✕</button>
+
+      <!-- 3D Viewport Column -->
+      <div class="modal-viewer-col">
+        <div id="catalog-3d-canvas"></div>
+        <div class="viewer-hint">Drag to Rotate · Scroll to Zoom</div>
+      </div>
+
+      <!-- Info/Details Column -->
+      <div class="modal-info-col">
+        <div class="modal-title-row">
+          <h2 id="modal-name">Modern Sofa</h2>
+          <div class="modal-price" id="modal-price">₹25,000</div>
+        </div>
+
+        <div class="modal-desc" id="modal-desc">
+          Premium 3-seater sofa featuring high-quality density foam, premium fabric textures, and solid steel frame supports.
+        </div>
+
+        <div class="dims-grid">
+          <div class="dim-card">
+            <div class="dim-lbl">Length</div>
+            <div class="dim-val" id="modal-length">220 cm</div>
+          </div>
+          <div class="dim-card">
+            <div class="dim-lbl">Breadth</div>
+            <div class="dim-val" id="modal-breadth">90 cm</div>
+          </div>
+          <div class="dim-card">
+            <div class="dim-lbl">Height</div>
+            <div class="dim-val" id="modal-height">85 cm</div>
+          </div>
+        </div>
+
+        <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.15); border-radius:12px; padding:12px 16px; font-size:12.5px; font-weight:700">
+          📐 Floor area footprint: <span id="modal-footprint" style="color:#10b981">17.9 sq ft</span>
+        </div>
+
+        <!-- Customizations Interactive -->
+        <div class="customize-section">
+          <div class="customize-title">Cushion Fabric Color</div>
+          <div class="swatch-group" id="swatch-group">
+            <div class="color-swatch active" style="background-color:#6c8ebf" onclick="updateModelColor('#6c8ebf', this)"></div>
+            <div class="color-swatch" style="background-color:#5a6e7f" onclick="updateModelColor('#5a6e7f', this)"></div>
+            <div class="color-swatch" style="background-color:#be8a62" onclick="updateModelColor('#be8a62', this)"></div>
+            <div class="color-swatch" style="background-color:#5c8c76" onclick="updateModelColor('#5c8c76', this)"></div>
+            <div class="color-swatch" style="background-color:#b85c5c" onclick="updateModelColor('#b85c5c', this)"></div>
+          </div>
+        </div>
+
+        <div class="customize-section" id="wood-customize" style="display:none;">
+          <div class="customize-title">Frame Wood Type</div>
+          <select class="finish-select" id="wood-finish-picker" onchange="updateWoodFinish(this.value)">
+            <option value="oak">Natural Oak Wood</option>
+            <option value="walnut">Walnut (Dark Finish)</option>
+            <option value="birch">Birch (Light Finish)</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="addFurnitureToDesign()">
+            <span>➕</span> Place in Workspace
+          </button>
+          <a href="/design" class="btn-secondary">Open Designer</a>
+        </div>
       </div>
     </div>
-
-    <div class="filter-bar" style="margin-bottom:20px">
-      <button class="filter-btn active" onclick="filterCat('',this)">All</button>
-      <button class="filter-btn" onclick="filterCat('seating',this)">🛋️ Seating</button>
-      <button class="filter-btn" onclick="filterCat('table',this)">🍽️ Tables</button>
-      <button class="filter-btn" onclick="filterCat('bedroom',this)">🛏️ Bedroom</button>
-      <button class="filter-btn" onclick="filterCat('storage',this)">📦 Storage</button>
-      <button class="filter-btn" onclick="filterCat('lighting',this)">💡 Lighting</button>
-    </div>
-
-    <div class="catalog-grid" id="catalog-grid"></div>
   </div>
 
-  <!-- DETAIL MODAL -->
-  <div class="modal-overlay" id="modal" onclick="closeModal(event)">
-    <div class="modal" style="position:relative">
-      <button class="close-btn" onclick="document.getElementById('modal').classList.remove('open')">✕</button>
-
-      <div class="modal-viewer">
-        <div class="main-image" id="modal-img-display">🛋️</div>
-        <div class="view-angles">
-          <button class="angle-btn active" onclick="setAngle('front',this)">Front</button>
-          <button class="angle-btn" onclick="setAngle('side',this)">Side</button>
-          <button class="angle-btn" onclick="setAngle('top',this)">Top</button>
-          <button class="angle-btn" onclick="setAngle('back',this)">Back</button>
-        </div>
-        <p style="font-size:11px;color:#aaa;margin-top:8px">Click angle to rotate view</p>
-      </div>
-
-      <div class="modal-info">
-        <div class="modal-name" id="modal-name">Modern Sofa</div>
-        <div class="modal-price" id="modal-price">₹25,000</div>
-
-        <div class="dim-grid">
-          <div class="dim-box">
-            <div class="dim-label">LENGTH</div>
-            <div class="dim-value" id="modal-length">220 cm</div>
-          </div>
-          <div class="dim-box">
-            <div class="dim-label">BREADTH</div>
-            <div class="dim-value" id="modal-breadth">90 cm</div>
-          </div>
-          <div class="dim-box">
-            <div class="dim-label">HEIGHT</div>
-            <div class="dim-value" id="modal-height">85 cm</div>
-          </div>
-        </div>
-
-        <div style="background:#e8f5e9;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px">
-          📐 Floor area covered: <strong id="modal-sqft">17.9 sq ft</strong>
-        </div>
-
-        <div class="modal-desc" id="modal-desc">Premium 3-seater sofa</div>
-
-        <div style="display:flex;gap:10px">
-          <button class="btn" onclick="addToDesign()" style="flex:1">
-            ➕ Add to Design
-          </button>
-          <button class="btn" onclick="window.location='/design'" style="background:#444;flex:1">
-            🎨 Open Designer
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!-- Three.js Dependency Setup -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
     const EMOJIS = {
@@ -130,73 +657,369 @@
       'Dining Table':'🍽️','Armchair':'💺','Floor Lamp':'💡',
       'Wardrobe':'🚪','King Bed':'🛏️'
     };
-    const ANGLE_EMOJIS = { front:'🛋️', side:'◀️🛋️', top:'⬛', back:'🔄🛋️' };
+    
     let allItems = [];
     let currentItem = null;
+    let selectedCategory = '';
+    let priceLimit = 40000;
 
-    async function loadCatalog(category='') {
-      const url = category ? `/api/furniture?category=${category}` : '/api/furniture';
-      const res = await fetch(url);
+    // Three.js modal instances
+    let previewScene, previewCamera, previewRenderer, previewControls;
+    let currentPreviewMesh = null;
+
+    async function loadCatalog() {
+      const res = await fetch('/api/furniture');
       allItems = await res.json();
-      renderGrid(allItems);
+      renderCatalog();
     }
 
-    function filterCat(cat, btn) {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadCatalog(cat);
-    }
+    function renderCatalog() {
+      const search = document.getElementById('search-box').value.toLowerCase();
+      const grid = document.getElementById('catalog-grid');
 
-    function renderGrid(items) {
-      document.getElementById('catalog-grid').innerHTML = items.map(item => `
+      const filtered = allItems.filter(item => {
+        const matchesSearch = item.name.toLowerCase().includes(search) || item.description.toLowerCase().includes(search);
+        const matchesCategory = selectedCategory === '' || item.category === selectedCategory;
+        const matchesPrice = item.price <= priceLimit;
+        return matchesSearch && matchesCategory && matchesPrice;
+      });
+
+      grid.innerHTML = filtered.map(item => `
         <div class="catalog-card" onclick="openModal(${item.id})">
-          <div class="card-image">
-            <span style="font-size:64px">${EMOJIS[item.name]||'🪑'}</span>
+          <div class="card-preview">
+            <span>${EMOJIS[item.name] || '🪑'}</span>
             <span class="card-badge">${item.style}</span>
           </div>
           <div class="card-body">
-            <div class="card-name">${item.name}</div>
-            <div class="card-dims">📐 ${item.length_cm}×${item.breadth_cm} cm · ${item.sqft} sq ft</div>
-            <div class="card-price">₹${item.price.toLocaleString()}</div>
+            <div class="card-title">${item.name}</div>
+            <div class="card-dims">📐 ${item.length_cm} × ${item.breadth_cm} × ${item.height_cm || 75} cm</div>
+            <div class="card-footer">
+              <div class="card-price">₹${item.price.toLocaleString()}</div>
+              <div style="font-size:12px;color:var(--text-muted)">${item.sqft} sq ft</div>
+            </div>
           </div>
         </div>
       `).join('');
     }
 
+    function setCategory(cat, btn) {
+      document.querySelectorAll('#category-pills .pill-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedCategory = cat;
+      renderCatalog();
+    }
+
+    function filterCatalog() {
+      renderCatalog();
+    }
+
+    function updatePriceLimit(val) {
+      priceLimit = val;
+      document.getElementById('price-limit-lbl').textContent = '₹' + parseInt(val).toLocaleString();
+      renderCatalog();
+    }
+
+    /* MODAL AND WEBGL ENGINE INIT */
     function openModal(id) {
       currentItem = allItems.find(i => i.id === id);
       if (!currentItem) return;
+
       document.getElementById('modal-name').textContent = currentItem.name;
       document.getElementById('modal-price').textContent = '₹' + currentItem.price.toLocaleString();
+      document.getElementById('modal-desc').textContent = currentItem.description;
       document.getElementById('modal-length').textContent = currentItem.length_cm + ' cm';
       document.getElementById('modal-breadth').textContent = currentItem.breadth_cm + ' cm';
-      document.getElementById('modal-height').textContent = currentItem.height_cm + ' cm';
-      document.getElementById('modal-sqft').textContent = currentItem.sqft + ' sq ft';
-      document.getElementById('modal-desc').textContent = currentItem.description;
-      document.getElementById('modal-img-display').textContent = EMOJIS[currentItem.name] || '🪑';
-      document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('active'));
-      document.querySelector('.angle-btn').classList.add('active');
-      document.getElementById('modal').classList.add('open');
+      document.getElementById('modal-height').textContent = (currentItem.height_cm || 75) + ' cm';
+      document.getElementById('modal-footprint').textContent = currentItem.sqft + ' sq ft';
+
+      // Set swatches and toggle customizable parameters
+      const swatches = document.getElementById('swatch-group');
+      const woodSection = document.getElementById('wood-customize');
+      
+      // Default swatch configurations
+      let baseColor = currentItem.color || '#6c8ebf';
+      swatches.innerHTML = `
+        <div class="color-swatch active" style="background-color:${baseColor}" onclick="updateModelColor('${baseColor}', this)"></div>
+        <div class="color-swatch" style="background-color:#4a5568" onclick="updateModelColor('#4a5568', this)"></div>
+        <div class="color-swatch" style="background-color:#a0aec0" onclick="updateModelColor('#a0aec0', this)"></div>
+        <div class="color-swatch" style="background-color:#e2e8f0" onclick="updateModelColor('#e2e8f0', this)"></div>
+        <div class="color-swatch" style="background-color:#2d3748" onclick="updateModelColor('#2d3748', this)"></div>
+      `;
+
+      if (currentItem.name.includes("Table") || currentItem.name.includes("Desk") || currentItem.name.includes("Bookshelf") || currentItem.name.includes("Wardrobe")) {
+        woodSection.style.display = 'block';
+      } else {
+        woodSection.style.display = 'none';
+      }
+
+      document.getElementById('detail-modal').classList.add('open');
+
+      // Initialize 3D Preview
+      setTimeout(() => {
+        setup3DInspector(currentItem);
+      }, 50);
     }
 
-    function setAngle(angle, btn) {
-      document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const el = document.getElementById('modal-img-display');
-      const angles = { front:'🛋️', side:'◀️', top:'⬜', back:'🔁' };
-      el.textContent = (EMOJIS[currentItem?.name]||'🪑') + ' ' + (angles[angle]||'');
+    function closeModal() {
+      document.getElementById('detail-modal').classList.remove('open');
+      if (previewRenderer) {
+        previewRenderer.dispose();
+        previewRenderer = null;
+      }
     }
 
-    function closeModal(e) {
-      if (e.target.id === 'modal') document.getElementById('modal').classList.remove('open');
+    function handleOutsideClick(e) {
+      if (e.target.id === 'detail-modal') closeModal();
     }
 
-    function addToDesign() {
+    /* Procedural WebGL Furniture Meshes */
+    function setup3DInspector(item) {
+      const container = document.getElementById('catalog-3d-canvas');
+      container.innerHTML = ''; // Clean old renderer
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      previewScene = new THREE.Scene();
+      previewScene.background = new THREE.Color('#06060a');
+
+      previewCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      previewCamera.position.set(2, 1.8, 2.5);
+
+      previewRenderer = new THREE.WebGLRenderer({ antialias: true });
+      previewRenderer.setSize(width, height);
+      previewRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(previewRenderer.domElement);
+
+      previewControls = new THREE.OrbitControls(previewCamera, previewRenderer.domElement);
+      previewControls.enableDamping = true;
+      previewControls.dampingFactor = 0.05;
+      previewControls.maxPolarAngle = Math.PI / 2 - 0.05; // Lock camera from going under object
+      previewControls.minDistance = 1;
+      previewControls.maxDistance = 5;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight('#ffffff', 0.65);
+      previewScene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight('#ffffff', 0.6);
+      dirLight1.position.set(5, 5, 5);
+      previewScene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight('#3b82f6', 0.25);
+      dirLight2.position.set(-5, 3, -5);
+      previewScene.add(dirLight2);
+
+      // Floor Grid
+      const gridHelper = new THREE.GridHelper(6, 12, '#3b82f6', '#1e293b');
+      gridHelper.position.y = -0.01;
+      previewScene.add(gridHelper);
+
+      // Render actual furniture structure dynamically
+      buildProceduralFurnitureMesh(item);
+
+      // Animation Loop
+      function animate() {
+        if (!previewRenderer) return;
+        requestAnimationFrame(animate);
+        previewControls.update();
+        if (currentPreviewMesh) {
+          // Slow rotate
+          currentPreviewMesh.rotation.y += 0.002;
+        }
+        previewRenderer.render(previewScene, previewCamera);
+      }
+      animate();
+    }
+
+    function buildProceduralFurnitureMesh(item) {
+      if (currentPreviewMesh) previewScene.remove(currentPreviewMesh);
+
+      const group = new THREE.Group();
+      
+      const w = item.length_cm / 100;
+      const d = item.breadth_cm / 100;
+      const h = (item.height_cm || 75) / 100;
+
+      // Materials base
+      const mats = {
+        wood: new THREE.MeshStandardMaterial({ color: '#8d6e63', roughness: 0.6 }),
+        metal: new THREE.MeshStandardMaterial({ color: '#7f8c8d', metalness: 0.8, roughness: 0.2 }),
+        cushion: new THREE.MeshStandardMaterial({ color: item.color || '#6c8ebf', roughness: 0.85 }),
+        fabricLight: new THREE.MeshStandardMaterial({ color: '#eceff1', roughness: 0.9 }),
+        lightshade: new THREE.MeshStandardMaterial({ color: '#ffe082', emissive: '#ffe082', emissiveIntensity: 0.15 })
+      };
+
+      if (item.name.includes("Sofa")) {
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.25, d - 0.1), mats.cushion);
+        seat.position.set(0, 0.15, 0);
+        group.add(seat);
+
+        const back = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.6, 0.16), mats.cushion);
+        back.position.set(0, 0.4, -d/2 + 0.08);
+        group.add(back);
+
+        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, d), mats.cushion);
+        armL.position.set(-w/2 + 0.05, 0.2, 0);
+        group.add(armL);
+
+        const armR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, d), mats.cushion);
+        armR.position.set(w/2 - 0.05, 0.2, 0);
+        group.add(armR);
+
+      } else if (item.name.includes("Coffee Table") || item.name.includes("Dining Table") || item.name.includes("Study Desk")) {
+        const top = new THREE.Mesh(new THREE.BoxGeometry(w, 0.04, d), mats.wood);
+        top.position.set(0, h - 0.02, 0);
+        group.add(top);
+
+        const legPositions = [
+          [-w/2 + 0.05, -d/2 + 0.05],
+          [-w/2 + 0.05, d/2 - 0.05],
+          [w/2 - 0.05, -d/2 + 0.05],
+          [w/2 - 0.05, d/2 - 0.05]
+        ];
+        legPositions.forEach(pos => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, h - 0.04), mats.metal);
+          leg.position.set(pos[0], (h - 0.04)/2, pos[1]);
+          group.add(leg);
+        });
+
+      } else if (item.name.includes("Bed")) {
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(w, 0.15, d), mats.wood);
+        frame.position.set(0, 0.075, 0);
+        group.add(frame);
+
+        const head = new THREE.Mesh(new THREE.BoxGeometry(0.08, h, d), mats.wood);
+        head.position.set(-w/2 + 0.04, h/2, 0);
+        group.add(head);
+
+        const cushion = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, 0.22, d - 0.08), mats.cushion);
+        cushion.position.set(0.05, 0.2, 0);
+        group.add(cushion);
+
+      } else if (item.name.includes("TV Unit") || item.name.includes("Wardrobe") || item.name.includes("Bookshelf")) {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats.wood);
+        box.position.set(0, h/2, 0);
+        group.add(box);
+
+      } else if (item.name.includes("Lamp")) {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, h - 0.2), mats.metal);
+        pole.position.set(0, (h - 0.2)/2, 0);
+        group.add(pole);
+
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.02), mats.metal);
+        base.position.set(0, 0.01, 0);
+        group.add(base);
+
+        const shade = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.25), mats.lightshade);
+        shade.position.set(0, h - 0.125, 0);
+        group.add(shade);
+      } else {
+        // Fallback cube
+        const box = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats.wood);
+        box.position.set(0, h/2, 0);
+        group.add(box);
+      }
+
+      currentPreviewMesh = group;
+      previewScene.add(group);
+    }
+
+    function updateModelColor(colorHex, swatch) {
+      document.querySelectorAll('#swatch-group .color-swatch').forEach(s => s.classList.remove('active'));
+      swatch.classList.add('active');
+
+      currentItem.color = colorHex;
+      
+      // Update mesh material color dynamically
+      if (currentPreviewMesh) {
+        currentPreviewMesh.traverse(child => {
+          if (child.isMesh && child.material) {
+            // Sofa structures, bed sheets
+            if (child.geometry.type === 'BoxGeometry' && 
+               (currentItem.name.includes("Sofa") || child.position.y > 0.19)) {
+              child.material.color.set(colorHex);
+            }
+          }
+        });
+      }
+    }
+
+    function updateWoodFinish(finish) {
+      const colors = { oak: '#8d6e63', walnut: '#4e342e', birch: '#d7ccc8' };
+      const selectedColor = colors[finish] || '#8d6e63';
+
+      if (currentPreviewMesh) {
+        currentPreviewMesh.traverse(child => {
+          // Identify wood components
+          if (child.isMesh && child.material && child.geometry.type === 'BoxGeometry') {
+            if (currentItem.name.includes("Table") || currentItem.name.includes("Desk") || currentItem.name.includes("Bookshelf") || currentItem.name.includes("Wardrobe")) {
+              if (child.position.y > 0.6 || child.geometry.parameters.height > 1.0) {
+                child.material.color.set(selectedColor);
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function addFurnitureToDesign() {
+      // Save item context in localStorage for placement inside the designer room
       localStorage.setItem('addItem', JSON.stringify(currentItem));
+      
+      // Check if we already have an active project session, load it, append the item, and save
+      const sessionRaw = localStorage.getItem('homeforge_session');
+      if (sessionRaw) {
+        try {
+          const session = JSON.parse(sessionRaw);
+          const pxPerMeter = session.blueprintData?.metadata?.scale_pixels_per_meter || 60;
+          
+          // Generate new item state
+          const newItem = {
+            id: Date.now(),
+            name: currentItem.name,
+            x: 250, // Center coordinate
+            y: 250,
+            width: Math.round(currentItem.length_cm * pxPerMeter / 100),
+            height: Math.round(currentItem.breadth_cm * pxPerMeter / 100),
+            rotation: 0,
+            price: currentItem.price,
+            color: currentItem.color || '#6c8ebf'
+          };
+          
+          session.placedItems.push(newItem);
+          session.currentStep = 4; // Open the decorating stage automatically
+          
+          localStorage.setItem('homeforge_session', JSON.stringify(session));
+          
+          // Trigger saving back to local state
+          localStorage.setItem('homeforge_project_state', JSON.stringify(session));
+
+          // Also sync back to dashboard project listing metrics
+          const activeId = session.activeProjectId;
+          if (activeId) {
+            const projectsRaw = localStorage.getItem('homeforge_projects');
+            if (projectsRaw) {
+              const projects = JSON.parse(projectsRaw);
+              const idx = projects.findIndex(p => p.id === activeId);
+              if (idx !== -1) {
+                projects[idx].placedItems = session.placedItems;
+                projects[idx].assets = session.placedItems.length;
+                projects[idx].budget = session.placedItems.reduce((sum, item) => sum + (item.price || 0), 0);
+                projects[idx].modified = new Date().toLocaleDateString();
+                localStorage.setItem('homeforge_projects', JSON.stringify(projects));
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error synchronizing item add:", e);
+        }
+      }
+
       window.location = '/design';
     }
 
-    loadCatalog();
+    window.onload = loadCatalog;
   </script>
 </body>
 </html>
