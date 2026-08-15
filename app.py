@@ -81,11 +81,30 @@ def upload_blueprint():
     filepath = os.path.join(UPLOAD_FOLDER, 'blueprint_' + file.filename)
     file.save(filepath)
     
+    original_filename = file.filename
+    display_url = f"/uploads/blueprint_{file.filename}"
+    
+    # Convert PDF pages to PNG using PyMuPDF if needed
+    if file.filename.lower().endswith('.pdf'):
+        try:
+            import fitz
+            doc = fitz.open(filepath)
+            if len(doc) > 0:
+                page = doc[0]
+                pix = page.get_pixmap(dpi=150)
+                png_filename = file.filename.rsplit('.', 1)[0] + '.png'
+                png_filepath = os.path.join(UPLOAD_FOLDER, 'blueprint_' + png_filename)
+                pix.save(png_filepath)
+                filepath = png_filepath
+                display_url = f"/uploads/blueprint_{png_filename}"
+        except Exception as e:
+            print("Failed to convert PDF to PNG using PyMuPDF:", e)
+            
     try:
         analyzer = BlueprintAnalyzer()
         recognition_data = analyzer.analyze(filepath)
-        recognition_data["filename"] = file.filename
-        recognition_data["url"] = f"/uploads/blueprint_{file.filename}"
+        recognition_data["filename"] = original_filename
+        recognition_data["url"] = display_url
         return jsonify(recognition_data)
     except Exception as e:
         import traceback
@@ -93,7 +112,7 @@ def upload_blueprint():
         return jsonify({
             "error": "Failed to analyze blueprint",
             "message": str(e),
-            "url": f"/uploads/blueprint_{file.filename}"
+            "url": display_url
         }), 500
 
 @app.route('/api/upload-furniture-image', methods=['POST'])

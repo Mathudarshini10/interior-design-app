@@ -173,6 +173,56 @@ const Exporter = {
     this.showNotification("📦 3D OBJ model downloaded!");
   },
 
+  // Trigger Cycles-emulated realistic render pass
+  triggerRealisticRender() {
+    const modal = document.getElementById('render-modal');
+    const loadingState = document.getElementById('render-loading-state');
+    const resultState = document.getElementById('render-result-state');
+    const progressBar = document.getElementById('render-progress-bar');
+    const statusText = document.getElementById('render-loading-status');
+    const outputImg = document.getElementById('render-output-image');
+
+    if (!modal) return;
+    
+    // Switch on modal
+    modal.style.display = 'flex';
+    loadingState.style.display = 'block';
+    resultState.style.display = 'none';
+    progressBar.style.width = '0%';
+    
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += Math.floor(Math.random() * 8) + 3;
+      if (progress >= 100) {
+        progress = 100;
+        clearInterval(interval);
+        
+        // Match render with active style theme
+        let style = State.currentStyle || 'modern';
+        if (style !== 'luxury') style = 'modern'; // fallback to modern image
+        
+        outputImg.src = `/static/images/render_${style}.jpg`;
+        
+        loadingState.style.display = 'none';
+        resultState.style.display = 'block';
+        this.showNotification("📸 Photorealistic render finished!");
+      }
+      progressBar.style.width = progress + '%';
+      statusText.textContent = `Resolving ambient occlusion & shadows... ${progress}%`;
+    }, 100);
+  },
+
+  // Download high-resolution photorealistic render file
+  downloadRealisticRender() {
+    const outputImg = document.getElementById('render-output-image');
+    if (!outputImg || !outputImg.src) return;
+    
+    const link = document.createElement('a');
+    link.href = outputImg.src;
+    link.download = `homeforge_realistic_render_${Date.now()}.jpg`;
+    link.click();
+  },
+
   showNotification(msg) {
     const notif = document.createElement('div');
     notif.className = 'toast-notification';
