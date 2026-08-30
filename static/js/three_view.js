@@ -55,6 +55,7 @@ function initThree() {
       threeTransformControls = new THREE.TransformControls(threeCamera, threeRenderer.domElement);
       threeTransformControls.size = 0.75;
       threeScene.add(threeTransformControls);
+      window.threeTransformControls = threeTransformControls;
 
       threeTransformControls.addEventListener('dragging-changed', (event) => {
         threeControls.enabled = !event.value;
@@ -72,10 +73,45 @@ function initThree() {
           if (item) {
             const scale = (State.blueprintData && State.blueprintData.metadata && State.blueprintData.metadata.scale_pixels_per_meter) ? State.blueprintData.metadata.scale_pixels_per_meter : 60.0;
             const canvasCoords = toCanvasCoords(targetObj.position.x, targetObj.position.z, scale);
+            
+            // Map position changes
             item.x = Math.round(canvasCoords.x - item.width / 2);
             item.y = Math.round(canvasCoords.y - item.height / 2);
             item.rotation = targetObj.rotation.y;
+
+            // Map scale changes back to width, depth, length_cm, breadth_cm
+            if (Math.abs(targetObj.scale.x - 1) > 0.01 || Math.abs(targetObj.scale.z - 1) > 0.01) {
+              item.width = Math.round(item.width * targetObj.scale.x);
+              item.height = Math.round(item.height * targetObj.scale.z);
+              item.length_cm = Math.round(item.length_cm * targetObj.scale.x);
+              item.breadth_cm = Math.round(item.breadth_cm * targetObj.scale.z);
+              targetObj.scale.set(1, 1, 1); // Reset to prevent feedback loops
+            }
             
+            // Real-time sync to sidebar DOM elements if open
+            const rotValSpan = document.getElementById('item-rot-val');
+            const rotInput = document.querySelector('input[oninput*="rotation"]');
+            if (rotValSpan && rotInput) {
+              const deg = Math.round((item.rotation || 0) * 180 / Math.PI) % 360;
+              const positiveDeg = deg < 0 ? deg + 360 : deg;
+              rotValSpan.textContent = positiveDeg + '°';
+              rotInput.value = positiveDeg;
+            }
+            
+            const lenValSpan = document.getElementById('item-len-val');
+            const lenInput = document.querySelector('input[oninput*="length_cm"]');
+            if (lenValSpan && lenInput) {
+              lenValSpan.textContent = item.length_cm + ' cm';
+              lenInput.value = item.length_cm;
+            }
+
+            const brValSpan = document.getElementById('item-breadth-val');
+            const brInput = document.querySelector('input[oninput*="breadth_cm"]');
+            if (brValSpan && brInput) {
+              brValSpan.textContent = item.breadth_cm + ' cm';
+              brInput.value = item.breadth_cm;
+            }
+
             redraw();
             State.saveState();
           }
@@ -86,10 +122,16 @@ function initThree() {
         if (!threeTransformControls) return;
         if (e.key === 't' || e.key === 'T' || e.key === 'w' || e.key === 'W') {
           threeTransformControls.setMode('translate');
-          Exporter.showNotification("🔄 Move Mode active");
+          if (window.UI && window.UI.setGizmoMode) window.UI.setGizmoMode('translate');
+          Exporter.showNotification("⬇️ Move Mode active");
         } else if (e.key === 'r' || e.key === 'R' || e.key === 'e' || e.key === 'E') {
           threeTransformControls.setMode('rotate');
+          if (window.UI && window.UI.setGizmoMode) window.UI.setGizmoMode('rotate');
           Exporter.showNotification("🔄 Rotate Mode active");
+        } else if (e.key === 's' || e.key === 'S') {
+          threeTransformControls.setMode('scale');
+          if (window.UI && window.UI.setGizmoMode) window.UI.setGizmoMode('scale');
+          Exporter.showNotification("📐 Scale/Resize Mode active");
         }
       });
     } else {

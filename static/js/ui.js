@@ -487,6 +487,19 @@ const UI = {
     if (propContent) {
       propContent.innerHTML = `<p style="font-size:11px; color:var(--text-secondary);">Active Tool: <strong>${mode.toUpperCase()}</strong>. Interact on the 2D canvas.</p>`;
     }
+  },
+
+  setGizmoMode(mode) {
+    if (window.threeTransformControls) {
+      window.threeTransformControls.setMode(mode);
+      const btnTranslate = document.getElementById('btn-gizmo-translate');
+      const btnRotate = document.getElementById('btn-gizmo-rotate');
+      const btnScale = document.getElementById('btn-gizmo-scale');
+      if (btnTranslate) btnTranslate.classList.toggle('active', mode === 'translate');
+      if (btnRotate) btnRotate.classList.toggle('active', mode === 'rotate');
+      if (btnScale) btnScale.classList.toggle('active', mode === 'scale');
+    }
+  },
     
     redraw();
   },
@@ -670,11 +683,19 @@ const UI = {
       `;
     }
     else if (type === 'item') {
+      const currentMode = (window.threeTransformControls) ? window.threeTransformControls.getMode() : 'translate';
       html = `
         <label>Placed Furniture Item</label>
         <div class="prop-row" style="font-weight:700;">${object.name}</div>
         <div class="prop-row">Price: <span style="color:#2e7d32; font-weight:700;">₹${object.price.toLocaleString()}</span></div>
         
+        <label style="margin-top:8px;">3D Transform Control Mode</label>
+        <div class="prop-row" style="gap:6px; margin-bottom:8px;">
+          <button class="nav-btn ${currentMode === 'translate' ? 'active' : ''}" id="btn-gizmo-translate" onclick="UI.setGizmoMode('translate')" style="flex:1; padding:6px 0; font-size:11px; font-weight:bold;">⬇️ Move</button>
+          <button class="nav-btn ${currentMode === 'rotate' ? 'active' : ''}" id="btn-gizmo-rotate" onclick="UI.setGizmoMode('rotate')" style="flex:1; padding:6px 0; font-size:11px; font-weight:bold;">🔄 Rotate</button>
+          <button class="nav-btn ${currentMode === 'scale' ? 'active' : ''}" id="btn-gizmo-scale" onclick="UI.setGizmoMode('scale')" style="flex:1; padding:6px 0; font-size:11px; font-weight:bold;">📐 Scale</button>
+        </div>
+
         <label style="margin-top:8px;">Rotation</label>
         <div class="prop-row">
           <input type="range" min="0" max="360" value="${Math.round((object.rotation || 0) * 180 / Math.PI)}" oninput="document.getElementById('item-rot-val').textContent=this.value+'°'; UI.updateItemProp('rotation', parseInt(this.value) * Math.PI / 180);"/>
